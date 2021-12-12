@@ -202,7 +202,7 @@ type User = {
 const friendItems: z.Schema<User['item'][]> & GetType = z.lazy(() =>
   UserSchema.item
 ).array()
-// you must define a `getType` function on the schema
+// you must define the `getType` function property on the schema
 // return a TS AST node
 friendItems.getType = (ts, identifier) =>
   ts.factory.createIndexedAccessTypeNode(
@@ -272,7 +272,7 @@ result:
 }
 ```
 
-To fix this, define `getType`:
+To fix this, define `getType()`:
 
 ```ts
 import { z } from 'zod'
@@ -288,6 +288,7 @@ const fruitNativeEnum: z.ZodNativeEnum<typeof Fruit> & GetType = z.nativeEnum(
   Fruit,
 )
 
+// return an identifier that will be used on the enum type
 fruitNativeEnum.getType = (ts) => {
   return ts.factory.createIdentifier('Fruit')
 }
