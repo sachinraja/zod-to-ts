@@ -1,0 +1,75 @@
+{
+  "name": "zod-to-ts",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "generate TypeScript types from your Zod schema",
+  "main": "dist/index.cjs",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.cjs"
+    }
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm clean && tsup",
+    "watch": "tsup --watch --no-dts",
+    "clean": "rimraf dist",
+    "format": "dprint fmt",
+    "lint": "run-p lint:*",
+    "lint:format": "dprint check",
+    "lint:types": "tsc",
+    "lint:js": "eslint .",
+    "prepare": "husky install",
+    "prepublishOnly": "pnpm build",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "peerDependencies": {
+    "typescript": "^4",
+    "zod": "*"
+  },
+  "dependencies": {
+    "ts-morph": "13.0.2"
+  },
+  "devDependencies": {
+    "@swc/core": "1.2.119",
+    "@swc/jest": "0.2.12",
+    "@types/jest": "27.0.3",
+    "@types/node": "16.11.12",
+    "@typescript-eslint/eslint-plugin": "5.6.0",
+    "@typescript-eslint/parser": "5.6.0",
+    "dprint": "0.19.1",
+    "eslint": "8.4.1",
+    "eslint-config-prettier": "8.3.0",
+    "husky": "7.0.4",
+    "jest": "27.4.4",
+    "lint-staged": "12.1.2",
+    "npm-run-all": "4.1.5",
+    "regenerator-runtime": "0.13.9",
+    "rimraf": "3.0.2",
+    "tsup": "5.11.1",
+    "typescript": "4.5.3",
+    "zod": "3.11.6"
+  },
+  "sideEffects": false,
+  "lint-staged": {
+    "*.{js,ts,md,json,yaml}": "dprint fmt"
+  },
+  "tsup": {
+    "entryPoints": [
+      "src/index.ts"
+    ],
+    "format": [
+      "esm",
+      "cjs"
+    ],
+    "dts": {
+      "resolve": true
+    },
+    "splitting": true
+  }
+}

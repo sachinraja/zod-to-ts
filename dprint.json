@@ -1,0 +1,23 @@
+{
+  "incremental": true,
+  "indentWidth": 2,
+  "typescript": {
+    "quoteStyle": "preferSingle",
+    "semiColons": "asi"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "associations": [
+      "**/*.yaml",
+      "**/*.json5"
+    ]
+  },
+  "includes": ["**/*.{ts,tsx,js,jsx,cjs,mjs,json,json5,md,yaml}"],
+  "excludes": ["**/node_modules", "pnpm-lock.yaml", "dist"],
+  "plugins": [
+    "https://plugins.dprint.dev/typescript-0.60.0.wasm",
+    "https://plugins.dprint.dev/json-0.13.2.wasm",
+    "https://plugins.dprint.dev/markdown-0.11.3.wasm",
+    "https://plugins.dprint.dev/prettier-0.3.0.exe-plugin@c6c227493e655717b5f3d9c811ba576c82f2b060317bb233c6ec014958fbee19"
+  ]
+}
