@@ -1,11 +1,10 @@
-import ts from 'typescript'
 import { z } from 'zod'
 import { GetType } from './types'
 
 enum Fruits {
   Apple = 'apple',
   Banana = 'banana',
-  Cantaloupe = 'hi',
+  Cantaloupe = 'cantaloupe',
 }
 
 const example2 = z.object({

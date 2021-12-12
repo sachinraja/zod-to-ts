@@ -17,7 +17,7 @@ export type ZodToTsReturn = {
 }
 
 export type GetTypeFunction = (
-  ts: typeof import('typescript'),
+  typescript: typeof ts,
   identifier: string,
   options: RequiredZodToTsOptions,
 ) => ts.Identifier | ts.TypeNode

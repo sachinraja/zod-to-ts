@@ -10,7 +10,7 @@ import {
   ZodToTsReturn,
   ZodToTsStore,
 } from './types'
-import { createTypeReferenceFromString, maybeIdentifierToTypeReference } from './util'
+import { createTypeAlias, createTypeReferenceFromString, maybeIdentifierToTypeReference, printNode } from './utils'
 
 const callGetType = (
   zod: ZodTypeAny & GetType,
@@ -31,21 +31,23 @@ export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => 
 
 export const zodToTs = (
   zod: ZodTypeAny,
-  identifier: string | undefined = 'Lazy',
+  identifier: string | undefined,
   options?: ZodToTsOptions,
 ): ZodToTsReturn => {
+  const resolvedIdentifier = identifier ?? 'Identifier'
+
   const resolvedOptions = resolveOptions(options)
 
   const store: ZodToTsStore = { nativeEnums: [] }
 
-  const node = zodToTsNode(zod, identifier, store, resolvedOptions)
+  const node = zodToTsNode(zod, resolvedIdentifier, store, resolvedOptions)
 
   return { node, store }
 }
 
 const zodToTsNode = (
   zod: ZodTypeAny,
-  identifier: string | undefined = 'Lazy',
+  identifier: string,
   store: ZodToTsStore,
   options: RequiredZodToTsOptions,
 ) => {
@@ -361,16 +363,11 @@ const zodLiteralToTs = (value: LiteralType) => {
   return ts.factory.createLiteralTypeNode(literal)
 }
 
-const getSourceFile = (code: string) =>
-  ts.createSourceFile('print.ts', code, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
-
-const printNode = (node: ts.Node) => {
-  const sourceFile = getSourceFile('')
-  const printer = ts.createPrinter()
-  return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
-}
-
-const { node, store } = zodToTs(example, 'hello', { resolveNativeEnums: true })
+const { node, store } = zodToTs(example, undefined, { resolveNativeEnums: true })
 const printedNode = printNode(node)
-console.log(printedNode)
-console.log(store.nativeEnums)
+// console.log(printedNode)
+// console.log(store.nativeEnums)
+console.log(printNode(createTypeAlias('Identifier', node)))
+
+export { createTypeAlias, printNode }
+export type { GetType, ZodToTsOptions }
