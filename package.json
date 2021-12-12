@@ -30,10 +30,7 @@
   },
   "peerDependencies": {
     "typescript": "^4",
-    "zod": "*"
-  },
-  "dependencies": {
-    "ts-morph": "13.0.2"
+    "zod": "^3"
   },
   "devDependencies": {
     "@swc/core": "1.2.119",

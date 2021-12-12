@@ -1,7 +1,25 @@
-import typescript from 'typescript'
+import ts from 'typescript'
 
-export type GetTypeFunction = (ts: typeof typescript, identifier: string) => typescript.TypeNode
+export type LiteralType = string | number | boolean
+
+export type ZodToTsOptions = {
+  resolveNativeEnums?: boolean
+}
+export type RequiredZodToTsOptions = Required<ZodToTsOptions>
+
+export type ZodToTsStore = {
+  nativeEnums: ts.EnumDeclaration[]
+}
+
+export type GetTypeFunction = (
+  ts: typeof import('typescript'),
+  identifier: string,
+  options: RequiredZodToTsOptions,
+) => ts.Identifier | ts.TypeNode
 
 export type GetType = { getType?: GetTypeFunction }
 
-export type LiteralType = string | number | boolean
+export type ZodToTsReturn = {
+  node: ts.TypeNode
+  store: ZodToTsStore
+}

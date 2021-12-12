@@ -1,30 +1,69 @@
 import ts from 'typescript'
 import { ZodTypeAny } from 'zod'
 import { example } from './example'
-import { GetType, GetTypeFunction, LiteralType } from './types'
+import {
+  GetType,
+  GetTypeFunction,
+  LiteralType,
+  RequiredZodToTsOptions,
+  ZodToTsOptions,
+  ZodToTsReturn,
+  ZodToTsStore,
+} from './types'
+import { createTypeReferenceFromString, maybeIdentifierToTypeReference } from './util'
 
-const callGetType = (zod: ZodTypeAny & GetType, identifier: string): ts.TypeNode | null => {
-  let type: ts.TypeNode | null = null
+const callGetType = (
+  zod: ZodTypeAny & GetType,
+  identifier: string,
+  options: RequiredZodToTsOptions,
+) => {
+  let type: ReturnType<GetTypeFunction> | null = null
 
   // this must be called before accessing 'type'
-  if (zod.getType) type = zod.getType(ts, identifier)
+  if (zod.getType) type = zod.getType(ts, identifier, options)
   return type
 }
 
-export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy') => {
+export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => {
+  const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true }
+  return { ...resolved, ...raw }
+}
+
+export const zodToTs = (
+  zod: ZodTypeAny,
+  identifier: string | undefined = 'Lazy',
+  options?: ZodToTsOptions,
+): ZodToTsReturn => {
+  const resolvedOptions = resolveOptions(options)
+
+  const store: ZodToTsStore = { nativeEnums: [] }
+
+  const node = zodToTsInternal(zod, identifier, store, resolvedOptions)
+
+  return { node, store }
+}
+
+export const zodToTsInternal = (
+  zod: ZodTypeAny,
+  identifier: string | undefined = 'Lazy',
+  store: ZodToTsStore,
+  options: RequiredZodToTsOptions,
+) => {
   const { typeName } = zod._def
 
   const zodPrimitive = zodPrimitiveToTs(typeName)
   if (zodPrimitive) return zodPrimitive
 
+  const otherArgs = [identifier, store, options] as const
+
   switch (typeName) {
     case 'ZodLazy': {
-      // this is a hack
       // it is impossible to determine what the lazy value is referring to
       // so we force the user to declare it
-      let type = callGetType(zod, identifier)
+      let type = callGetType(zod, identifier, options)
 
-      if (!type) type = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(identifier))
+      if (!type) type = createTypeReferenceFromString(identifier)
+      else type = maybeIdentifierToTypeReference(type)
 
       return type
     }
@@ -35,7 +74,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
       const properties = Object.entries(zod._def.shape())
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
-        const type = zodToTs(value as ZodTypeAny, identifier)
+        const type = zodToTsInternal(value as ZodTypeAny, ...otherArgs)
 
         return ts.factory.createPropertySignature(
           undefined,
@@ -48,7 +87,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
     }
 
     case 'ZodArray': {
-      const type = zodToTs(zod._def.type, identifier)
+      const type = zodToTsInternal(zod._def.type, ...otherArgs)
       const node = ts.factory.createArrayTypeNode(type)
       return node
     }
@@ -61,26 +100,51 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodUnion': {
       // z.union([z.string(), z.number()]) -> string | number
-      const types = zod._def.options.map((option: ZodTypeAny) => zodToTs(option, identifier))
+      const types = zod._def.options.map((option: ZodTypeAny) => zodToTsInternal(option, ...otherArgs))
       return ts.factory.createUnionTypeNode(types)
     }
 
     case 'ZodEffects': {
       // ignore any effects, they won't factor into the types
-      const node = zodToTs(zod._def.schema, identifier) as ts.TypeNode
+      const node = zodToTsInternal(zod._def.schema, ...otherArgs) as ts.TypeNode
       return node
     }
 
     case 'ZodNativeEnum': {
-      let type = callGetType(zod, identifier)
+      // z.nativeEnum(Fruits) -> Fruits
+      // can resolve Fruits into store and user can handle enums
+      let type = callGetType(zod, identifier, options)
+      if (!type) return ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
 
-      if (!type) type = ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+      if (options.resolveNativeEnums) {
+        const enumMembers = Object.entries(zod._def.values as Record<string, string>).map(([key, value]) => {
+          return ts.factory.createEnumMember(
+            ts.factory.createIdentifier(key),
+            ts.factory.createStringLiteral(value),
+          )
+        })
+
+        if (ts.isIdentifier(type)) {
+          store.nativeEnums.push(
+            ts.factory.createEnumDeclaration(
+              undefined,
+              undefined,
+              type,
+              enumMembers,
+            ),
+          )
+        } else {
+          throw new Error('getType on nativeEnum must return an identifier when resolveNativeEnums is set')
+        }
+      }
+
+      type = maybeIdentifierToTypeReference(type)
 
       return type
     }
 
     case 'ZodOptional': {
-      const innerType = zodToTs(zod._def.innerType, identifier) as ts.TypeNode
+      const innerType = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
       return ts.factory.createUnionTypeNode([
         innerType,
         ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
@@ -88,7 +152,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
     }
 
     case 'ZodNullable': {
-      const innerType = zodToTs(zod._def.innerType, identifier) as ts.TypeNode
+      const innerType = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
       return ts.factory.createUnionTypeNode([
         innerType,
         // @ts-expect-error this works
@@ -99,13 +163,13 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodTuple': {
       // z.tuple([z.string(), z.number()]) -> [string, number]
-      const types = zod._def.items.map((option: ZodTypeAny) => zodToTs(option, identifier))
+      const types = zod._def.items.map((option: ZodTypeAny) => zodToTsInternal(option, ...otherArgs))
       return ts.factory.createTupleTypeNode(types)
     }
 
     case 'ZodRecord': {
       // z.record(z.number()) -> { [x: string]: number }
-      const valueType = zodToTs(zod._def.valueType, identifier)
+      const valueType = zodToTsInternal(zod._def.valueType, ...otherArgs)
 
       const node = ts.factory.createTypeLiteralNode([ts.factory.createIndexSignature(
         undefined,
@@ -127,8 +191,8 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodMap': {
       // z.map(z.string()) -> Map<string>
-      const valueType = zodToTs(zod._def.valueType, identifier)
-      const keyType = zodToTs(zod._def.keyType, identifier)
+      const valueType = zodToTsInternal(zod._def.valueType, ...otherArgs)
+      const keyType = zodToTsInternal(zod._def.keyType, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Map'),
@@ -143,7 +207,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodSet': {
       // z.set(z.string()) -> Set<string>
-      const type = zodToTs(zod._def.valueType, identifier)
+      const type = zodToTsInternal(zod._def.valueType, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Set'),
@@ -154,15 +218,15 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodIntersection': {
       // z.number().and(z.string()) -> number & string
-      const left = zodToTs(zod._def.left, identifier)
-      const right = zodToTs(zod._def.right, identifier)
+      const left = zodToTsInternal(zod._def.left, ...otherArgs)
+      const right = zodToTsInternal(zod._def.right, ...otherArgs)
       const node = ts.factory.createIntersectionTypeNode([left, right])
       return node
     }
 
     case 'ZodPromise': {
       // z.promise(z.string()) -> Promise<string>
-      const type = zodToTs(zod._def.type, identifier)
+      const type = zodToTsInternal(zod._def.type, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Promise'),
@@ -175,7 +239,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
     case 'ZodFunction': {
       // z.function().args(z.string()).returns(z.number()) -> (args_0: string) => number
       const argTypes = zod._def.args._def.items.map((arg: ZodTypeAny, index: number) => {
-        const argType = zodToTs(arg, identifier)
+        const argType = zodToTsInternal(arg, ...otherArgs)
 
         return ts.factory.createParameterDeclaration(
           undefined,
@@ -200,7 +264,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
         ),
       )
 
-      const returnType = zodToTs(zod._def.returns, identifier)
+      const returnType = zodToTsInternal(zod._def.returns, ...otherArgs)
 
       const node = ts.factory.createFunctionTypeNode(
         undefined,
@@ -213,7 +277,7 @@ export const zodToTs = (zod: ZodTypeAny, identifier: string | undefined = 'Lazy'
 
     case 'ZodDefault': {
       // z.string().optional().default('hi') -> string
-      const type = zodToTs(zod._def.innerType, identifier) as ts.TypeNode
+      const type = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
 
       const filteredNodes: ts.Node[] = []
 
@@ -249,7 +313,7 @@ const zodPrimitiveToTs = (zodPrimitive: string) => {
       node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
       break
     case 'ZodDate':
-      node = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Date'), undefined)
+      node = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Date'))
       break
     case 'ZodUndefined':
       node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
@@ -306,5 +370,7 @@ const printNode = (node: ts.Node) => {
   return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
 }
 
-const printedNode = printNode(zodToTs(example, 'hello'))
+const { node, store } = zodToTs(example, 'hello', { resolveNativeEnums: true })
+const printedNode = printNode(node)
 console.log(printedNode)
+console.log(store.nativeEnums)

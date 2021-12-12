@@ -1,3 +1,4 @@
+import ts from 'typescript'
 import { z } from 'zod'
 import { GetType } from './types'
 
@@ -20,9 +21,13 @@ const pickedSchema = example2.partial()
 
 const nativeEnum: z.ZodNativeEnum<typeof Fruits> & GetType = z.nativeEnum(Fruits)
 
-nativeEnum.getType = (ts) => {
+nativeEnum.getType = (ts, _, options) => {
+  const identifier = ts.factory.createIdentifier('Fruits')
+
+  if (options.resolveNativeEnums) return identifier
+
   return ts.factory.createTypeReferenceNode(
-    ts.factory.createIdentifier('Fruits'),
+    identifier,
     undefined,
   )
 }
