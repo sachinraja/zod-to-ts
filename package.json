@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "type": "module",
   "description": "generate TypeScript types from your Zod schema",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sachinraja/zod-to-ts.git"
+  },
+  "homepage": "https://github.com/sachinraja/zod-to-ts#readme",
+  "bugs": {
+    "url": "https://github.com/sachinraja/zod-to-ts/issues"
+  },
   "main": "dist/index.cjs",
   "exports": {
     "./package.json": "./package.json",
@@ -14,6 +22,11 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist"
+  ],
+  "keywords": [
+    "zod",
+    "typescript",
+    "generator"
   ],
   "scripts": {
     "build": "pnpm clean && tsup",

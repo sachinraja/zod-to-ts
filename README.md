@@ -146,7 +146,7 @@ type User = {
 But what happens when the schema looks like this?
 
 ```ts
-type User {
+type User = {
   username: string
   item: {
     name: string
@@ -190,7 +190,7 @@ result:
 ```ts
 import { z } from 'zod'
 import { GetType } from 'zod-to-ts'
-type User {
+type User = {
   username: string
   item: {
     name: string
@@ -198,7 +198,6 @@ type User {
   }
   friends: User[]
 }
-
 
 const friendItems: z.Schema<User['item'][]> & GetType = z.lazy(() =>
   UserSchema.item
@@ -315,7 +314,7 @@ Option 2 - resolve enums. This is the same as before, but you just need to pass 
 const TreeTSType = zodToTs(TreeSchema, { resolveNativeEnums: true })
 ```
 
-These are not the actual values, they are TS representation. The actual values are TS AST nodes:
+result:
 
 <!-- dprint-ignore -->
 ```ts
@@ -335,4 +334,6 @@ These are not the actual values, they are TS representation. The actual values a
 }
 ```
 
-This allows you to embed the enums before the schema without actually depending on an external enum type.
+Note: These are not the actual values, they are TS representation. The actual values are TS AST nodes.
+
+This option allows you to embed the enums before the schema without actually depending on an external enum type.
