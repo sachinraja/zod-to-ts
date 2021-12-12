@@ -11,7 +11,7 @@ export const maybeIdentifierToTypeReference = (identifier: ts.Identifier | ts.Ty
 export const createTypeReferenceFromString = (identifier: string) =>
   ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(identifier))
 
-export const createTypeAlias = (identifier: string, node: ts.TypeNode) => {
+export const createTypeAlias = (node: ts.TypeNode, identifier: string) => {
   return ts.factory.createTypeAliasDeclaration(
     undefined,
     undefined,

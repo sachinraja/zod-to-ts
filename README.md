@@ -15,7 +15,7 @@ import { z } from 'zod'
 import { zodToTs } from 'zod-to-ts'
 
 // define your Zod schema
-const User = z.object({
+const UserSchema = z.object({
   username: z.string(),
   age: z.number(),
   inventory: z.object({
@@ -25,7 +25,7 @@ const User = z.object({
 })
 
 // pass schema and name of type/identifier
-const { node } = zodToTs(User, 'User')
+const { node } = zodToTs(UserSchema, 'User')
 ```
 
 result:
@@ -48,8 +48,8 @@ You must pass in the identifier `User` or it will default to `Identifier`. This 
 import { createTypeAlias, zodToTs } from 'zod-to-ts'
 
 const identifier = 'User'
-const { node } = zodToTs(User, identifier)
-const typeAlias = createTypeAlias(identifier, node)
+const { node } = zodToTs(UserSchema, identifier)
+const typeAlias = createTypeAlias(node, identifier)
 ```
 
 result:
@@ -68,7 +68,7 @@ type User = {
 import { printNode, zodToTs } from 'zod-to-ts'
 
 const identifier = 'User'
-const { node } = zodToTs(User, identifier)
+const { node } = zodToTs(UserSchema, identifier)
 const nodeString = printNode(node)
 ```
 
@@ -92,7 +92,7 @@ result:
 import { createTypeAlias, printNode, zodToTs } from 'zod-to-ts'
 
 const identifier = 'User'
-const { node } = zodToTs(User, identifier)
+const { node } = zodToTs(UserSchema, identifier)
 const typeAlias = createTypeAlias(node, identifier)
 const nodeString = printNode(typeAlias)
 ```
@@ -128,7 +128,7 @@ type User = {
 
 const UserSchema: z.ZodSchema<User> = z.object({
   username: z.string(),
-  friends: z.lazy(() => User).array(),
+  friends: z.lazy(() => UserSchema).array(),
 })
 
 const { node } = zodToTs(UserSchema, 'User')
@@ -163,7 +163,7 @@ const UserSchema: z.ZodSchema<User> = z.object({
   username: z.string(),
   item: z.object({
     name: z.string(),
-    itemId: z.string(),
+    id: z.number(),
   }),
   friendItems,
 })
@@ -179,13 +179,13 @@ result:
   username: string
   item: {
     name: string
-    itemId: string
+    id: number
   }
   friendItems: User[]
 }
 ```
 
-`friendItems` will still have the `User` type even though it is actually referencing `User["item"]`. You must provide more information to determine the actual type. Unfortunately, this means working with the TS AST:
+`friendItems` will still have the `User` type even though it is actually referencing `UserSchema["item"]`. You must provide more information to determine the actual type. Unfortunately, this means working with the TS AST:
 
 ```ts
 import { z } from 'zod'
@@ -194,7 +194,7 @@ type User = {
   username: string
   item: {
     name: string
-    itemId: string
+    id: number
   }
   friends: User[]
 }
@@ -217,7 +217,7 @@ const UserSchema: z.ZodSchema<User> = z.object({
   username: z.string(),
   item: z.object({
     name: z.string(),
-    itemId: z.string(),
+    id: z.number(),
   }),
   friendItems,
 })
@@ -232,7 +232,7 @@ result:
   username: string
   item: {
     name: string
-    itemId: string
+    id: number
   }
   friendItems: User['item'][]
 }

@@ -1,0 +1,55 @@
+import { dedent } from 'ts-dedent'
+import ts from 'typescript'
+import { z } from 'zod'
+import { createTypeAlias, printNode, zodToTs } from '../src'
+
+const UserSchema = z.object({
+  username: z.string(),
+  age: z.number(),
+})
+
+const identifier = 'User'
+
+describe('type alias', () => {
+  const { node } = zodToTs(UserSchema, identifier)
+  const typeAlias = createTypeAlias(node, identifier)
+
+  it('has correct node structure', () => {
+    const expectedNode = ts.factory.createTypeAliasDeclaration(
+      undefined,
+      undefined,
+      ts.factory.createIdentifier('User'),
+      undefined,
+      ts.factory.createTypeLiteralNode(
+        [
+          ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier('username'),
+            undefined,
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+          ),
+          ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier('age'),
+            undefined,
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword),
+          ),
+        ],
+      ),
+    )
+
+    expect(typeAlias).toStrictEqual(expectedNode)
+  })
+
+  it('outputs correct typescript', () => {
+    const expectedType = dedent(`
+      type User = {
+          username: string;
+          age: number;
+      };`)
+
+    const printedNode = printNode(typeAlias)
+
+    expect(printedNode).toStrictEqual(expectedType)
+  })
+})
