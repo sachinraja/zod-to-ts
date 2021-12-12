@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { GetType } from './types'
+import { printNode, zodToTs } from '../src'
+import { GetType } from '../src/types'
 
 enum Fruits {
   Apple = 'apple',
@@ -91,3 +92,7 @@ export const example = z.object({
 type A = z.infer<typeof example>['aa']
 
 type B = z.infer<typeof pickedSchema>
+
+const { node } = zodToTs(example, 'Example')
+
+console.log(printNode(node))

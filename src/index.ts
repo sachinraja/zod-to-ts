@@ -1,6 +1,5 @@
 import ts from 'typescript'
 import { ZodTypeAny } from 'zod'
-import { example } from './example'
 import {
   GetType,
   GetTypeFunction,
@@ -358,12 +357,6 @@ const zodLiteralToTs = (value: LiteralType) => {
 
   return ts.factory.createLiteralTypeNode(literal)
 }
-
-const { node, store } = zodToTs(example, undefined, { resolveNativeEnums: true })
-const printedNode = printNode(node)
-// console.log(printedNode)
-// console.log(store.nativeEnums)
-// console.log(printNode(createTypeAlias('Identifier', node)))
 
 export { createTypeAlias, printNode }
 export type { GetType, ZodToTsOptions }
