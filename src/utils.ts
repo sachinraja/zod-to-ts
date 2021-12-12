@@ -21,8 +21,8 @@ export const createTypeAlias = (identifier: string, node: ts.TypeNode) => {
   )
 }
 
-export const printNode = (node: ts.Node) => {
+export const printNode = (node: ts.Node, printerOptions?: ts.PrinterOptions) => {
   const sourceFile = ts.createSourceFile('print.ts', '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
-  const printer = ts.createPrinter()
+  const printer = ts.createPrinter(printerOptions)
   return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
 }

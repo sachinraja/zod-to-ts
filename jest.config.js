@@ -4,6 +4,7 @@ const jestConfig = {
     '^.+\\.(j|t)sx?$': [
       '@swc/jest',
       {
+        sourceMaps: true,
         jsc: {
           parser: {
             syntax: 'typescript',

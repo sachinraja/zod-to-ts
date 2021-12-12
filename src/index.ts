@@ -31,7 +31,7 @@ export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => 
 
 export const zodToTs = (
   zod: ZodTypeAny,
-  identifier: string | undefined,
+  identifier?: string,
   options?: ZodToTsOptions,
 ): ZodToTsReturn => {
   const resolvedIdentifier = identifier ?? 'Identifier'
@@ -157,9 +157,7 @@ const zodToTsNode = (
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
       return ts.factory.createUnionTypeNode([
         innerType,
-        // @ts-expect-error this works
-        // but 'createKeyWordTypeNode' doesn't accept NullKeyword for some reason
-        ts.factory.createKeywordTypeNode(ts.SyntaxKind.NullKeyword),
+        ts.factory.createLiteralTypeNode(ts.factory.createNull()),
       ])
     }
 
@@ -321,9 +319,7 @@ const zodPrimitiveToTs = (zodPrimitive: string) => {
       node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
       break
     case 'ZodNull':
-      // @ts-expect-error this works
-      // but 'createKeyWordTypeNode' doesn't accept NullKeyword for some reason
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NullKeyword)
+      node = ts.factory.createLiteralTypeNode(ts.factory.createNull())
       break
     case 'ZodVoid':
       node = ts.factory.createUnionTypeNode([
@@ -367,7 +363,7 @@ const { node, store } = zodToTs(example, undefined, { resolveNativeEnums: true }
 const printedNode = printNode(node)
 // console.log(printedNode)
 // console.log(store.nativeEnums)
-console.log(printNode(createTypeAlias('Identifier', node)))
+// console.log(printNode(createTypeAlias('Identifier', node)))
 
 export { createTypeAlias, printNode }
 export type { GetType, ZodToTsOptions }
