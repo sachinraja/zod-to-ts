@@ -38,12 +38,12 @@ export const zodToTs = (
 
   const store: ZodToTsStore = { nativeEnums: [] }
 
-  const node = zodToTsInternal(zod, identifier, store, resolvedOptions)
+  const node = zodToTsNode(zod, identifier, store, resolvedOptions)
 
   return { node, store }
 }
 
-export const zodToTsInternal = (
+const zodToTsNode = (
   zod: ZodTypeAny,
   identifier: string | undefined = 'Lazy',
   store: ZodToTsStore,
@@ -74,7 +74,7 @@ export const zodToTsInternal = (
       const properties = Object.entries(zod._def.shape())
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
-        const type = zodToTsInternal(value as ZodTypeAny, ...otherArgs)
+        const type = zodToTsNode(value as ZodTypeAny, ...otherArgs)
 
         return ts.factory.createPropertySignature(
           undefined,
@@ -87,7 +87,7 @@ export const zodToTsInternal = (
     }
 
     case 'ZodArray': {
-      const type = zodToTsInternal(zod._def.type, ...otherArgs)
+      const type = zodToTsNode(zod._def.type, ...otherArgs)
       const node = ts.factory.createArrayTypeNode(type)
       return node
     }
@@ -100,13 +100,13 @@ export const zodToTsInternal = (
 
     case 'ZodUnion': {
       // z.union([z.string(), z.number()]) -> string | number
-      const types = zod._def.options.map((option: ZodTypeAny) => zodToTsInternal(option, ...otherArgs))
+      const types = zod._def.options.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArgs))
       return ts.factory.createUnionTypeNode(types)
     }
 
     case 'ZodEffects': {
       // ignore any effects, they won't factor into the types
-      const node = zodToTsInternal(zod._def.schema, ...otherArgs) as ts.TypeNode
+      const node = zodToTsNode(zod._def.schema, ...otherArgs) as ts.TypeNode
       return node
     }
 
@@ -144,7 +144,7 @@ export const zodToTsInternal = (
     }
 
     case 'ZodOptional': {
-      const innerType = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
+      const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
       return ts.factory.createUnionTypeNode([
         innerType,
         ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
@@ -152,7 +152,7 @@ export const zodToTsInternal = (
     }
 
     case 'ZodNullable': {
-      const innerType = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
+      const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
       return ts.factory.createUnionTypeNode([
         innerType,
         // @ts-expect-error this works
@@ -163,13 +163,13 @@ export const zodToTsInternal = (
 
     case 'ZodTuple': {
       // z.tuple([z.string(), z.number()]) -> [string, number]
-      const types = zod._def.items.map((option: ZodTypeAny) => zodToTsInternal(option, ...otherArgs))
+      const types = zod._def.items.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArgs))
       return ts.factory.createTupleTypeNode(types)
     }
 
     case 'ZodRecord': {
       // z.record(z.number()) -> { [x: string]: number }
-      const valueType = zodToTsInternal(zod._def.valueType, ...otherArgs)
+      const valueType = zodToTsNode(zod._def.valueType, ...otherArgs)
 
       const node = ts.factory.createTypeLiteralNode([ts.factory.createIndexSignature(
         undefined,
@@ -191,8 +191,8 @@ export const zodToTsInternal = (
 
     case 'ZodMap': {
       // z.map(z.string()) -> Map<string>
-      const valueType = zodToTsInternal(zod._def.valueType, ...otherArgs)
-      const keyType = zodToTsInternal(zod._def.keyType, ...otherArgs)
+      const valueType = zodToTsNode(zod._def.valueType, ...otherArgs)
+      const keyType = zodToTsNode(zod._def.keyType, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Map'),
@@ -207,7 +207,7 @@ export const zodToTsInternal = (
 
     case 'ZodSet': {
       // z.set(z.string()) -> Set<string>
-      const type = zodToTsInternal(zod._def.valueType, ...otherArgs)
+      const type = zodToTsNode(zod._def.valueType, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Set'),
@@ -218,15 +218,15 @@ export const zodToTsInternal = (
 
     case 'ZodIntersection': {
       // z.number().and(z.string()) -> number & string
-      const left = zodToTsInternal(zod._def.left, ...otherArgs)
-      const right = zodToTsInternal(zod._def.right, ...otherArgs)
+      const left = zodToTsNode(zod._def.left, ...otherArgs)
+      const right = zodToTsNode(zod._def.right, ...otherArgs)
       const node = ts.factory.createIntersectionTypeNode([left, right])
       return node
     }
 
     case 'ZodPromise': {
       // z.promise(z.string()) -> Promise<string>
-      const type = zodToTsInternal(zod._def.type, ...otherArgs)
+      const type = zodToTsNode(zod._def.type, ...otherArgs)
 
       const node = ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Promise'),
@@ -239,7 +239,7 @@ export const zodToTsInternal = (
     case 'ZodFunction': {
       // z.function().args(z.string()).returns(z.number()) -> (args_0: string) => number
       const argTypes = zod._def.args._def.items.map((arg: ZodTypeAny, index: number) => {
-        const argType = zodToTsInternal(arg, ...otherArgs)
+        const argType = zodToTsNode(arg, ...otherArgs)
 
         return ts.factory.createParameterDeclaration(
           undefined,
@@ -264,7 +264,7 @@ export const zodToTsInternal = (
         ),
       )
 
-      const returnType = zodToTsInternal(zod._def.returns, ...otherArgs)
+      const returnType = zodToTsNode(zod._def.returns, ...otherArgs)
 
       const node = ts.factory.createFunctionTypeNode(
         undefined,
@@ -277,7 +277,7 @@ export const zodToTsInternal = (
 
     case 'ZodDefault': {
       // z.string().optional().default('hi') -> string
-      const type = zodToTsInternal(zod._def.innerType, ...otherArgs) as ts.TypeNode
+      const type = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
 
       const filteredNodes: ts.Node[] = []
 

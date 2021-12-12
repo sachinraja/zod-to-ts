@@ -11,6 +11,11 @@ export type ZodToTsStore = {
   nativeEnums: ts.EnumDeclaration[]
 }
 
+export type ZodToTsReturn = {
+  node: ts.TypeNode
+  store: ZodToTsStore
+}
+
 export type GetTypeFunction = (
   ts: typeof import('typescript'),
   identifier: string,
@@ -18,8 +23,3 @@ export type GetTypeFunction = (
 ) => ts.Identifier | ts.TypeNode
 
 export type GetType = { getType?: GetTypeFunction }
-
-export type ZodToTsReturn = {
-  node: ts.TypeNode
-  store: ZodToTsStore
-}
