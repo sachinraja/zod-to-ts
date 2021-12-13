@@ -240,6 +240,8 @@ result:
 }
 ```
 
+[TypeScript AST Viewer](https://ts-ast-viewer.com/) can help a lot with this if you are having trouble referencing something. It even provides copy-pastable code!
+
 #### [z.nativeEnum()](https://github.com/colinhacks/zod#native-enums)
 
 `z.enum()` is always preferred, but sometimes `z.nativeEnum()` is necessary. `z.nativeEnum()` works similarly to `z.lazy()` in that the identifier of the enum cannot be determined. There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
