@@ -1,5 +1,6 @@
 import { dedent } from 'ts-dedent'
 import ts from 'typescript'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { printNode, zodToTs } from '../src'
 
@@ -37,7 +38,7 @@ describe('z.lazy() referencing root type', () => {
       ],
     )
 
-    expect(node).toStrictEqual(expectedNode)
+    expect(node).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {
@@ -63,6 +64,6 @@ describe('z.lazy() referencing root type', () => {
 
     const printedNode = printNode(nodeWithoutSpecifiedIdentifier)
 
-    expect(printedNode).toStrictEqual(expectedType)
+    expect(printedNode).to.deep.equal(expectedType)
   })
 })

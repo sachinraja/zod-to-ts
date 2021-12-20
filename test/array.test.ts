@@ -1,5 +1,6 @@
 import { dedent } from 'ts-dedent'
 import ts from 'typescript'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { printNode, zodToTs } from '../src'
 
@@ -28,7 +29,7 @@ describe('z.array()', () => {
       ]),
     )
 
-    expect(node).toStrictEqual(expectedNode)
+    expect(node).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {
