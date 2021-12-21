@@ -1,21 +1,22 @@
 import ts from 'typescript'
+const { factory: f } = ts
 
 export const maybeIdentifierToTypeReference = (identifier: ts.Identifier | ts.TypeNode) => {
   if (ts.isIdentifier(identifier)) {
-    return ts.factory.createTypeReferenceNode(identifier)
+    return f.createTypeReferenceNode(identifier)
   }
 
   return identifier
 }
 
 export const createTypeReferenceFromString = (identifier: string) =>
-  ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(identifier))
+  f.createTypeReferenceNode(f.createIdentifier(identifier))
 
 export const createTypeAlias = (node: ts.TypeNode, identifier: string) => {
-  return ts.factory.createTypeAliasDeclaration(
+  return f.createTypeAliasDeclaration(
     undefined,
     undefined,
-    ts.factory.createIdentifier(identifier),
+    f.createIdentifier(identifier),
     undefined,
     node,
   )
