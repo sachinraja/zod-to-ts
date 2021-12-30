@@ -16,7 +16,7 @@ specifiers:
   tsup: 5.11.9
   typescript: 4.5.4
   vite: 2.7.9
-  vitest: 0.0.118
+  vitest: 0.0.123
   zod: 3.11.6
 
 devDependencies:
@@ -35,7 +35,7 @@ devDependencies:
   tsup: 5.11.9_typescript@4.5.4
   typescript: 4.5.4
   vite: 2.7.9
-  vitest: 0.0.118_vite@2.7.9
+  vitest: 0.0.123
   zod: 3.11.6
 
 packages:
@@ -3255,6 +3255,33 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
+  /vite/2.7.10:
+    resolution:
+      {
+        integrity: sha512-KEY96ntXUid1/xJihJbgmLZx7QSC2D4Tui0FdS0Old5OokYzFclcofhtxtjDdGOk/fFpPbHv9yw88+rB93Tb8w==,
+      }
+    engines: { node: '>=12.2.0' }
+    hasBin: true
+    peerDependencies:
+      less: '*'
+      sass: '*'
+      stylus: '*'
+    peerDependenciesMeta:
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+    dependencies:
+      esbuild: 0.13.15
+      postcss: 8.4.5
+      resolve: 1.20.0
+      rollup: 2.60.0
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
   /vite/2.7.9:
     resolution:
       {
@@ -3282,19 +3309,21 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vitest/0.0.118_vite@2.7.9:
+  /vitest/0.0.123:
     resolution:
       {
-        integrity: sha512-2zBpowIaVAMPFB+/DkHFpt63QNXMz737dKTpLtC2t4RNUfLS4n+KKg14nFexj5VlhMf4ntSkrvDHnrE+6gFTmg==,
+        integrity: sha512-imbaqfK8LRiK9F/c5bWXbEUZvhLDW/VRCqniB3ev5jMcts0eH4VgM7lB8CJTsJ3HwbLFWHt8Pj3syMcKKd1SMg==,
       }
     engines: { node: '>=14.14.0' }
     hasBin: true
     peerDependencies:
+      '@vitest/ui': '*'
       c8: '*'
       happy-dom: '*'
       jsdom: '*'
-      vite: ^2.7.1
     peerDependenciesMeta:
+      '@vitest/ui':
+        optional: true
       c8:
         optional: true
       happy-dom:
@@ -3308,7 +3337,11 @@ packages:
       local-pkg: 0.4.0
       tinypool: 0.0.6
       tinyspy: 0.2.6
-      vite: 2.7.9
+      vite: 2.7.10
+    transitivePeerDependencies:
+      - less
+      - sass
+      - stylus
     dev: true
 
   /which-boxed-primitive/1.0.2:

@@ -61,7 +61,7 @@
     "tsup": "5.11.9",
     "typescript": "4.5.4",
     "vite": "2.7.9",
-    "vitest": "0.0.118",
+    "vitest": "0.0.123",
     "zod": "3.11.6"
   },
   "sideEffects": false,
