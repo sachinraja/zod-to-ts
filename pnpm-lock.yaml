@@ -10,7 +10,6 @@ specifiers:
   husky: 7.0.4
   lint-staged: 12.1.4
   npm-run-all: 4.1.5
-  regenerator-runtime: 0.13.9
   rimraf: 3.0.2
   ts-dedent: 2.2.0
   tsup: 5.11.9
@@ -29,7 +28,6 @@ devDependencies:
   husky: 7.0.4
   lint-staged: 12.1.4
   npm-run-all: 4.1.5
-  regenerator-runtime: 0.13.9
   rimraf: 3.0.2
   ts-dedent: 2.2.0
   tsup: 5.11.9_typescript@4.5.4
@@ -2618,13 +2616,6 @@ packages:
     engines: { node: '>=8.10.0' }
     dependencies:
       picomatch: 2.3.0
-    dev: true
-
-  /regenerator-runtime/0.13.9:
-    resolution:
-      {
-        integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==,
-      }
     dev: true
 
   /regexpp/3.2.0:

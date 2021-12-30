@@ -11,6 +11,8 @@ import {
 } from './types'
 import { createTypeAlias, createTypeReferenceFromString, maybeIdentifierToTypeReference, printNode } from './utils'
 
+const { factory: f } = ts
+
 const callGetType = (
   zod: ZodTypeAny & GetType,
   identifier: string,
@@ -77,32 +79,32 @@ const zodToTsNode = (
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
         const type = zodToTsNode(value as ZodTypeAny, ...otherArgs)
 
-        return ts.factory.createPropertySignature(
+        return f.createPropertySignature(
           undefined,
-          ts.factory.createIdentifier(key),
+          f.createIdentifier(key),
           undefined,
           type,
         )
       })
-      return ts.factory.createTypeLiteralNode(members)
+      return f.createTypeLiteralNode(members)
     }
 
     case 'ZodArray': {
       const type = zodToTsNode(zod._def.type, ...otherArgs)
-      const node = ts.factory.createArrayTypeNode(type)
+      const node = f.createArrayTypeNode(type)
       return node
     }
 
     case 'ZodEnum': {
       // z.enum['a', 'b', 'c'] -> 'a' | 'b' | 'c
-      const types = zod._def.values.map((value: string) => ts.factory.createStringLiteral(value))
-      return ts.factory.createUnionTypeNode(types)
+      const types = zod._def.values.map((value: string) => f.createStringLiteral(value))
+      return f.createUnionTypeNode(types)
     }
 
     case 'ZodUnion': {
       // z.union([z.string(), z.number()]) -> string | number
       const types = zod._def.options.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArgs))
-      return ts.factory.createUnionTypeNode(types)
+      return f.createUnionTypeNode(types)
     }
 
     case 'ZodEffects': {
@@ -115,19 +117,19 @@ const zodToTsNode = (
       // z.nativeEnum(Fruits) -> Fruits
       // can resolve Fruits into store and user can handle enums
       let type = callGetType(zod, identifier, options)
-      if (!type) return ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+      if (!type) return f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
 
       if (options.resolveNativeEnums) {
         const enumMembers = Object.entries(zod._def.values as Record<string, string>).map(([key, value]) => {
-          return ts.factory.createEnumMember(
-            ts.factory.createIdentifier(key),
-            ts.factory.createStringLiteral(value),
+          return f.createEnumMember(
+            f.createIdentifier(key),
+            f.createStringLiteral(value),
           )
         })
 
         if (ts.isIdentifier(type)) {
           store.nativeEnums.push(
-            ts.factory.createEnumDeclaration(
+            f.createEnumDeclaration(
               undefined,
               undefined,
               type,
@@ -146,40 +148,40 @@ const zodToTsNode = (
 
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
-      return ts.factory.createUnionTypeNode([
+      return f.createUnionTypeNode([
         innerType,
-        ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+        f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
       ])
     }
 
     case 'ZodNullable': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
-      return ts.factory.createUnionTypeNode([
+      return f.createUnionTypeNode([
         innerType,
-        ts.factory.createLiteralTypeNode(ts.factory.createNull()),
+        f.createLiteralTypeNode(f.createNull()),
       ])
     }
 
     case 'ZodTuple': {
       // z.tuple([z.string(), z.number()]) -> [string, number]
       const types = zod._def.items.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArgs))
-      return ts.factory.createTupleTypeNode(types)
+      return f.createTupleTypeNode(types)
     }
 
     case 'ZodRecord': {
       // z.record(z.number()) -> { [x: string]: number }
       const valueType = zodToTsNode(zod._def.valueType, ...otherArgs)
 
-      const node = ts.factory.createTypeLiteralNode([ts.factory.createIndexSignature(
+      const node = f.createTypeLiteralNode([f.createIndexSignature(
         undefined,
         undefined,
-        [ts.factory.createParameterDeclaration(
+        [f.createParameterDeclaration(
           undefined,
           undefined,
           undefined,
-          ts.factory.createIdentifier('x'),
+          f.createIdentifier('x'),
           undefined,
-          ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+          f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
           undefined,
         )],
         valueType,
@@ -193,8 +195,8 @@ const zodToTsNode = (
       const valueType = zodToTsNode(zod._def.valueType, ...otherArgs)
       const keyType = zodToTsNode(zod._def.keyType, ...otherArgs)
 
-      const node = ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier('Map'),
+      const node = f.createTypeReferenceNode(
+        f.createIdentifier('Map'),
         [
           keyType,
           valueType,
@@ -208,8 +210,8 @@ const zodToTsNode = (
       // z.set(z.string()) -> Set<string>
       const type = zodToTsNode(zod._def.valueType, ...otherArgs)
 
-      const node = ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier('Set'),
+      const node = f.createTypeReferenceNode(
+        f.createIdentifier('Set'),
         [type],
       )
       return node
@@ -219,7 +221,7 @@ const zodToTsNode = (
       // z.number().and(z.string()) -> number & string
       const left = zodToTsNode(zod._def.left, ...otherArgs)
       const right = zodToTsNode(zod._def.right, ...otherArgs)
-      const node = ts.factory.createIntersectionTypeNode([left, right])
+      const node = f.createIntersectionTypeNode([left, right])
       return node
     }
 
@@ -227,8 +229,8 @@ const zodToTsNode = (
       // z.promise(z.string()) -> Promise<string>
       const type = zodToTsNode(zod._def.type, ...otherArgs)
 
-      const node = ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier('Promise'),
+      const node = f.createTypeReferenceNode(
+        f.createIdentifier('Promise'),
         [type],
       )
 
@@ -240,11 +242,11 @@ const zodToTsNode = (
       const argTypes = zod._def.args._def.items.map((arg: ZodTypeAny, index: number) => {
         const argType = zodToTsNode(arg, ...otherArgs)
 
-        return ts.factory.createParameterDeclaration(
+        return f.createParameterDeclaration(
           undefined,
           undefined,
           undefined,
-          ts.factory.createIdentifier(`args_${index}`),
+          f.createIdentifier(`args_${index}`),
           undefined,
           argType,
           undefined,
@@ -252,20 +254,20 @@ const zodToTsNode = (
       }) as ts.ParameterDeclaration[]
 
       argTypes.push(
-        ts.factory.createParameterDeclaration(
+        f.createParameterDeclaration(
           undefined,
           undefined,
-          ts.factory.createToken(ts.SyntaxKind.DotDotDotToken),
-          ts.factory.createIdentifier(`args_${argTypes.length}`),
+          f.createToken(ts.SyntaxKind.DotDotDotToken),
+          f.createIdentifier(`args_${argTypes.length}`),
           undefined,
-          ts.factory.createArrayTypeNode(ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)),
+          f.createArrayTypeNode(f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)),
           undefined,
         ),
       )
 
       const returnType = zodToTsNode(zod._def.returns, ...otherArgs)
 
-      const node = ts.factory.createFunctionTypeNode(
+      const node = f.createFunctionTypeNode(
         undefined,
         argTypes,
         returnType,
@@ -293,47 +295,47 @@ const zodToTsNode = (
     }
   }
 
-  return ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+  return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
 }
 
 const zodPrimitiveToTs = (zodPrimitive: string) => {
   let node: ts.TypeNode | null = null
   switch (zodPrimitive) {
     case 'ZodString':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
       break
     case 'ZodNumber':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
       break
     case 'ZodBigInt':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
       break
     case 'ZodBoolean':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
       break
     case 'ZodDate':
-      node = ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Date'))
+      node = f.createTypeReferenceNode(f.createIdentifier('Date'))
       break
     case 'ZodUndefined':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
       break
     case 'ZodNull':
-      node = ts.factory.createLiteralTypeNode(ts.factory.createNull())
+      node = f.createLiteralTypeNode(f.createNull())
       break
     case 'ZodVoid':
-      node = ts.factory.createUnionTypeNode([
-        ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
-        ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+      node = f.createUnionTypeNode([
+        f.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
+        f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
       ])
       break
     case 'ZodAny':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
       break
     case 'ZodUnknown':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
       break
     case 'ZodNever':
-      node = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
+      node = f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
   }
 
   return node
@@ -344,18 +346,18 @@ const zodLiteralToTs = (value: LiteralType) => {
 
   switch (typeof value) {
     case 'number':
-      literal = ts.factory.createNumericLiteral(value)
+      literal = f.createNumericLiteral(value)
       break
     case 'boolean':
-      if (value === true) literal = ts.factory.createTrue()
-      else literal = ts.factory.createFalse()
+      if (value === true) literal = f.createTrue()
+      else literal = f.createFalse()
       break
     default:
-      literal = ts.factory.createStringLiteral(value)
+      literal = f.createStringLiteral(value)
       break
   }
 
-  return ts.factory.createLiteralTypeNode(literal)
+  return f.createLiteralTypeNode(literal)
 }
 
 export { createTypeAlias, printNode }
