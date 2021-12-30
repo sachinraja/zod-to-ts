@@ -1,5 +1,6 @@
 import { dedent } from 'ts-dedent'
 import ts from 'typescript'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { printNode, zodToTs } from '../src'
 
@@ -14,13 +15,13 @@ describe('z.optional()', () => {
       ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
     ])
 
-    expect(node).toStrictEqual(expectedNode)
+    expect(node).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {
     const expectedType = 'string | undefined'
     const printedNode = printNode(node)
-    expect(printedNode).toStrictEqual(expectedType)
+    expect(printedNode).to.deep.equal(expectedType)
   })
 })
 
@@ -33,7 +34,7 @@ describe('z.optional()', () => {
       ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
     ])
 
-    expect(node).toStrictEqual(expectedNode)
+    expect(node).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {
@@ -65,7 +66,7 @@ describe('z.nullable()', () => {
       ],
     )
 
-    expect(node).toStrictEqual(expectedNode)
+    expect(node).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {

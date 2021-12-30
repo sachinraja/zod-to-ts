@@ -1,5 +1,6 @@
 import { dedent } from 'ts-dedent'
 import ts from 'typescript'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { createTypeAlias, printNode, zodToTs } from '../src'
 
@@ -38,7 +39,7 @@ describe('type alias', () => {
       ),
     )
 
-    expect(typeAlias).toStrictEqual(expectedNode)
+    expect(typeAlias).to.deep.equal(expectedNode)
   })
 
   it('outputs correct typescript', () => {
