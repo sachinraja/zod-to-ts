@@ -361,4 +361,5 @@ const zodLiteralToTs = (value: LiteralType) => {
 }
 
 export { createTypeAlias, printNode }
+export { withGetType } from './utils'
 export type { GetType, ZodToTsOptions }

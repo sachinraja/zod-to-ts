@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { printNode, zodToTs } from '../src'
-import { GetType } from '../src/types'
+import { printNode, withGetType, zodToTs } from '../src'
 
 enum Fruits {
   Apple = 'apple',
@@ -19,9 +18,7 @@ const example2 = z.object({
 
 const pickedSchema = example2.partial()
 
-const nativeEnum: z.ZodNativeEnum<typeof Fruits> & GetType = z.nativeEnum(Fruits)
-
-nativeEnum.getType = (ts, _, options) => {
+const nativeEnum = withGetType(z.nativeEnum(Fruits), (ts, _, options) => {
   const identifier = ts.factory.createIdentifier('Fruits')
 
   if (options.resolveNativeEnums) return identifier
@@ -30,23 +27,24 @@ nativeEnum.getType = (ts, _, options) => {
     identifier,
     undefined,
   )
-}
+})
 
 type ELazy = {
   a: string
   b: ELazy
 }
 
-const eLazy: z.ZodSchema<ELazy> & GetType = z.lazy(() => e3)
-
-eLazy.getType = (ts, identifier) =>
-  ts.factory.createIndexedAccessTypeNode(
-    ts.factory.createTypeReferenceNode(
-      ts.factory.createIdentifier(identifier),
-      undefined,
+const eLazy: z.ZodSchema<ELazy> = withGetType(
+  z.lazy(() => e3),
+  (ts, identifier) =>
+    ts.factory.createIndexedAccessTypeNode(
+      ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier(identifier),
+        undefined,
+      ),
+      ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('b')),
     ),
-    ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('b')),
-  )
+)
 
 const e3 = z.object({
   a: z.string(),

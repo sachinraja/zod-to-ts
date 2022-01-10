@@ -191,7 +191,7 @@ result:
 
 ```ts
 import { z } from 'zod'
-import { GetType } from 'zod-to-ts'
+import { withGetType } from 'zod-to-ts'
 type User = {
   username: string
   item: {
@@ -201,19 +201,18 @@ type User = {
   friends: User[]
 }
 
-const friendItems: z.Schema<User['item'][]> & GetType = z.lazy(() =>
-  UserSchema.item
-).array()
-// you must define the `getType` function property on the schema
-// return a TS AST node
-friendItems.getType = (ts, identifier) =>
-  ts.factory.createIndexedAccessTypeNode(
-    ts.factory.createTypeReferenceNode(
-      ts.factory.createIdentifier(identifier),
-      undefined,
+const friendItems: z.Schema<User['item'][]> = withGetType(
+  z.lazy(() => UserSchema.item).array(),
+  // return a TS AST node
+  (ts, identifier) =>
+    ts.factory.createIndexedAccessTypeNode(
+      ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier(identifier),
+        undefined,
+      ),
+      ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('item')),
     ),
-    ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('item')),
-  )
+)
 
 const UserSchema: z.ZodSchema<User> = z.object({
   username: z.string(),
@@ -244,13 +243,11 @@ result:
 
 #### [z.nativeEnum()](https://github.com/colinhacks/zod#native-enums)
 
-`z.enum()` is always preferred, but sometimes `z.nativeEnum()` is necessary. `z.nativeEnum()` works similarly to `z.lazy()` in that the identifier of the enum cannot be determined. There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
-
-Option 1 - providing an identifier:
+`z.enum()` is always preferred, but sometimes `z.nativeEnum()` is necessary. `z.nativeEnum()` works similarly to `z.lazy()` in that the identifier of the enum cannot be determined:
 
 ```ts
 import { z } from 'zod'
-import { GetType } from 'zod-to-ts'
+import { withGetType } from 'zod-to-ts'
 
 enum Fruit {
   Apple = 'apple',
@@ -258,7 +255,7 @@ enum Fruit {
   Cantaloupe = 'cantaloupe',
 }
 
-const fruitNativeEnum: z.ZodNativeEnum<typeof Fruit> & GetType = z.nativeEnum(
+const fruitNativeEnum: = z.nativeEnum(
   Fruit,
 )
 
@@ -276,11 +273,13 @@ result:
 }
 ```
 
-To fix this, define `getType()`:
+There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
+
+Option 1 - providing an identifier using `withGetType()`:
 
 ```ts
 import { z } from 'zod'
-import { GetType, zodToTs } from 'zod-to-ts'
+import { withGetType, zodToTs } from 'zod-to-ts'
 
 enum Fruit {
   Apple = 'apple',
@@ -288,14 +287,13 @@ enum Fruit {
   Cantaloupe = 'cantaloupe',
 }
 
-const fruitNativeEnum: z.ZodNativeEnum<typeof Fruit> & GetType = z.nativeEnum(
-  Fruit,
+const fruitNativeEnum = withGetType(
+  z.nativeEnum(
+    Fruit,
+  ),
+  // return an identifier that will be used on the enum type
+  (ts) => ts.factory.createIdentifier('Fruit'),
 )
-
-// return an identifier that will be used on the enum type
-fruitNativeEnum.getType = (ts) => {
-  return ts.factory.createIdentifier('Fruit')
-}
 
 const TreeSchema = z.object({
   fruit: fruitNativeEnum,

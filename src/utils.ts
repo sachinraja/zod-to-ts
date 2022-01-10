@@ -1,4 +1,6 @@
 import ts from 'typescript'
+import { ZodTypeAny } from 'zod'
+import { GetType, GetTypeFunction } from './types'
 const { factory: f } = ts
 
 export const maybeIdentifierToTypeReference = (identifier: ts.Identifier | ts.TypeNode) => {
@@ -26,4 +28,9 @@ export const printNode = (node: ts.Node, printerOptions?: ts.PrinterOptions) => 
   const sourceFile = ts.createSourceFile('print.ts', '', ts.ScriptTarget.Latest, false, ts.ScriptKind.TS)
   const printer = ts.createPrinter(printerOptions)
   return printer.printNode(ts.EmitHint.Unspecified, node, sourceFile)
+}
+
+export const withGetType = <T extends ZodTypeAny & GetType>(schema: T, getType: GetTypeFunction): T => {
+  schema.getType = getType
+  return schema
 }
