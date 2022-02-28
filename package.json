@@ -39,7 +39,8 @@
     "lint:js": "eslint .",
     "prepare": "husky install",
     "prepublishOnly": "pnpm build",
-    "test": "vitest"
+    "test": "vitest",
+    "example": "node --loader esbuild-node-loader test/example.ts"
   },
   "peerDependencies": {
     "typescript": "^4",

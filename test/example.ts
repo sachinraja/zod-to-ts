@@ -51,7 +51,11 @@ const e3 = z.object({
   b: eLazy,
 })
 
-const dateType = withGetType(z.instanceof(Date), (ts) => ts.factory.createIdentifier('Date'))
+const dateType = withGetType(
+  z.instanceof(Date),
+  (ts) => ts.factory.createIdentifier('Date'),
+)
+
 export const example = z.object({
   a: z.string(),
   b: z.number(),

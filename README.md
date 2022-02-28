@@ -113,6 +113,47 @@ result:
 }"
 ```
 
+## Overriding Types
+
+You can use `withGetType` to override a type, which is useful when more information is needed to determine the actual type. Unfortunately, this means working with the TS AST:
+
+```ts
+import { z } from 'zod'
+import { withGetType } from 'zod-to-ts'
+
+const DateSchema = withGetType(
+  z.instanceof(Date),
+  (ts) => ts.factory.createIdentifier('Date'),
+)
+
+const ItemSchema = z.object({
+  name: z.string(),
+  date: DateSchema,
+})
+
+const { node } = zodToTs(ItemSchema, 'Item')
+```
+
+result without `withGetType` override:
+
+```ts
+type Item = {
+  name: string
+  date: any
+}
+```
+
+result with override:
+
+```ts
+type Item = {
+  name: string
+  date: Date
+}
+```
+
+[TypeScript AST Viewer](https://ts-ast-viewer.com/) can help a lot with this if you are having trouble referencing something. It even provides copy-pastable code!
+
 ### Special Cases
 
 #### [z.lazy()](https://github.com/colinhacks/zod#recursive-types)
@@ -187,7 +228,7 @@ result:
 }
 ```
 
-`friendItems` will still have the `User` type even though it is actually referencing `UserSchema["item"]`. You must provide more information to determine the actual type. Unfortunately, this means working with the TS AST:
+`friendItems` will still have the `User` type even though it is actually referencing `UserSchema["item"]`. You must provide the actual type using `withGetType`:
 
 ```ts
 import { z } from 'zod'
@@ -238,8 +279,6 @@ result:
   friendItems: User['item'][]
 }
 ```
-
-[TypeScript AST Viewer](https://ts-ast-viewer.com/) can help a lot with this if you are having trouble referencing something. It even provides copy-pastable code!
 
 #### [z.nativeEnum()](https://github.com/colinhacks/zod#native-enums)
 
