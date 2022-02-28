@@ -51,6 +51,7 @@ const e3 = z.object({
   b: eLazy,
 })
 
+const dateType = withGetType(z.instanceof(Date), (ts) => ts.factory.createIdentifier('Date'))
 export const example = z.object({
   a: z.string(),
   b: z.number(),
@@ -85,9 +86,11 @@ export const example = z.object({
   y: z.string().optional().default('hi'),
   z: z.string().refine((val) => val.length > 10).or(z.number()).and(z.bigint().nullish().default(1000n)),
   aa: nativeEnum,
+  bb: dateType,
+  cc: z.lazy(() => z.string()),
 })
 
-type A = z.infer<typeof example>['aa']
+type A = z.infer<typeof example>['bb']
 
 type B = z.infer<typeof pickedSchema>
 

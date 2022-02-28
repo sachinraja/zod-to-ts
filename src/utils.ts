@@ -14,6 +14,7 @@ export const maybeIdentifierToTypeReference = (identifier: ts.Identifier | ts.Ty
 export const createTypeReferenceFromString = (identifier: string) =>
   f.createTypeReferenceNode(f.createIdentifier(identifier))
 
+export const createUnknownKeywordNode = () => f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
 export const createTypeAlias = (node: ts.TypeNode, identifier: string) => {
   return f.createTypeAliasDeclaration(
     undefined,

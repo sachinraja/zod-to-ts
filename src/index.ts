@@ -9,7 +9,13 @@ import {
   ZodToTsReturn,
   ZodToTsStore,
 } from './types'
-import { createTypeAlias, createTypeReferenceFromString, maybeIdentifierToTypeReference, printNode } from './utils'
+import {
+  createTypeAlias,
+  createTypeReferenceFromString,
+  createUnknownKeywordNode,
+  maybeIdentifierToTypeReference,
+  printNode,
+} from './utils'
 
 const { factory: f } = ts
 
@@ -53,6 +59,13 @@ const zodToTsNode = (
   options: RequiredZodToTsOptions,
 ) => {
   const { typeName } = zod._def
+  console.log(typeName)
+
+  const getTypeType = callGetType(zod, identifier, options)
+  // special case native enum, which needs an identifier node
+  if (getTypeType && typeName !== 'ZodNativeEnum') {
+    return maybeIdentifierToTypeReference(getTypeType)
+  }
 
   const zodPrimitive = zodPrimitiveToTs(typeName)
   if (zodPrimitive) return zodPrimitive
@@ -63,15 +76,11 @@ const zodToTsNode = (
     case 'ZodLazy': {
       // it is impossible to determine what the lazy value is referring to
       // so we force the user to declare it
-      let type = callGetType(zod, identifier, options)
-
-      if (!type) type = createTypeReferenceFromString(identifier)
-      else type = maybeIdentifierToTypeReference(type)
-
-      return type
+      if (!getTypeType) return createTypeReferenceFromString(identifier)
+      break
     }
     case 'ZodLiteral':
-      // z.literal('hi') -> 'hi
+      // z.literal('hi') -> 'hi'
       return zodLiteralToTs(zod._def.value)
     case 'ZodObject': {
       const properties = Object.entries(zod._def.shape())
@@ -116,8 +125,8 @@ const zodToTsNode = (
     case 'ZodNativeEnum': {
       // z.nativeEnum(Fruits) -> Fruits
       // can resolve Fruits into store and user can handle enums
-      let type = callGetType(zod, identifier, options)
-      if (!type) return f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+      let type = getTypeType
+      if (!type) return createUnknownKeywordNode()
 
       if (options.resolveNativeEnums) {
         const enumMembers = Object.entries(zod._def.values as Record<string, string>).map(([key, value]) => {
@@ -260,7 +269,7 @@ const zodToTsNode = (
           f.createToken(ts.SyntaxKind.DotDotDotToken),
           f.createIdentifier(`args_${argTypes.length}`),
           undefined,
-          f.createArrayTypeNode(f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)),
+          f.createArrayTypeNode(createUnknownKeywordNode()),
           undefined,
         ),
       )
@@ -332,7 +341,7 @@ const zodPrimitiveToTs = (zodPrimitive: string) => {
       node = f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
       break
     case 'ZodUnknown':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+      node = createUnknownKeywordNode()
       break
     case 'ZodNever':
       node = f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
