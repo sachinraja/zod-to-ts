@@ -59,7 +59,6 @@ const zodToTsNode = (
   options: RequiredZodToTsOptions,
 ) => {
   const { typeName } = zod._def
-  console.log(typeName)
 
   const getTypeType = callGetType(zod, identifier, options)
   // special case native enum, which needs an identifier node
