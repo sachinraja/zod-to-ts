@@ -119,7 +119,7 @@ You can use `withGetType` to override a type, which is useful when more informat
 
 ```ts
 import { z } from 'zod'
-import { withGetType } from 'zod-to-ts'
+import { withGetType, zodToTs } from 'zod-to-ts'
 
 const DateSchema = withGetType(
   z.instanceof(Date),
