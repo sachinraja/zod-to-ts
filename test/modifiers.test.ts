@@ -45,6 +45,37 @@ describe('z.optional()', () => {
   })
 })
 
+const ObjectWithOptionalStringSchema = z.object({
+  optional: OptionalStringSchema,
+})
+
+describe('z.optional() - optionalPropertiesForOptionals flag', () => {
+  it('does not have optional fields', () => {
+    const { node: nodeFlagDefault } = zodToTs(ObjectWithOptionalStringSchema, undefined)
+    const { node: nodeFlagFalse } = zodToTs(ObjectWithOptionalStringSchema, undefined, {
+      optionalPropertiesForOptionals: false,
+    })
+
+    const expectedType = dedent `
+    {
+        optional: string | undefined;
+    }`
+    expect(printNodeTest(nodeFlagDefault)).toStrictEqual(expectedType)
+    expect(printNodeTest(nodeFlagFalse)).toStrictEqual(expectedType)
+  })
+
+  it('has optional fields', () => {
+    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, { optionalPropertiesForOptionals: true })
+
+    const expectedType = dedent `
+    {
+        optional?: string | undefined;
+    }`
+    const printedNode = printNodeTest(node)
+    expect(printedNode).toStrictEqual(expectedType)
+  })
+})
+
 const NullableUsernameSchema = z.object({
   username: z.string().nullable(),
 })

@@ -113,6 +113,29 @@ result:
 }"
 ```
 
+## ZodToTsOptions
+
+`resolveNativeEnums` - embed the enums before the schema without actually depending on an external enum type.
+
+`optionalPropertiesForOptionals` - mark properties as optional for optional Zod types
+
+```ts
+const Schema = z.object({
+  optional: z.string().optional(),
+})
+const { node } = zodToTs(Schema, 'Schema', {
+  optionalPropertiesForOptionals: true,
+})
+```
+
+result:
+
+```
+{
+    optional?: string | undefined
+}
+```
+
 ## Overriding Types
 
 You can use `withGetType` to override a type, which is useful when more information is needed to determine the actual type. Unfortunately, this means working with the TS AST:
@@ -314,7 +337,7 @@ result:
 
 There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
 
-Option 1 - providing an identifier using `withGetType()`:
+##### Option 1 - providing an identifier using `withGetType()`:
 
 ```ts
 import { z } from 'zod'
@@ -350,7 +373,7 @@ result:
 }
 ```
 
-Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
+##### Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
 
 ```ts
 const TreeTSType = zodToTs(TreeSchema, { resolveNativeEnums: true })

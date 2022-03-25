@@ -32,7 +32,7 @@ const callGetType = (
 }
 
 export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => {
-  const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true }
+  const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true, optionalPropertiesForOptionals: false }
   return { ...resolved, ...raw }
 }
 
@@ -85,12 +85,15 @@ const zodToTsNode = (
       const properties = Object.entries(zod._def.shape())
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
-        const type = zodToTsNode(value as ZodTypeAny, ...otherArgs)
+        const zodAny = value as ZodTypeAny
+        const type = zodToTsNode(zodAny, ...otherArgs)
 
         return f.createPropertySignature(
           undefined,
           f.createIdentifier(key),
-          undefined,
+          zodAny._def.typeName === 'ZodOptional' && options.optionalPropertiesForOptionals
+            ? f.createToken(ts.SyntaxKind.QuestionToken)
+            : undefined,
           type,
         )
       })
