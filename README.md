@@ -115,7 +115,7 @@ result:
 
 ## ZodToTsOptions
 
-`resolveNativeEnums` - embed the enums before the schema without actually depending on an external enum type.
+`resolveNativeEnums` - embed the enums before the schema without actually depending on an external enum type. [See](#option-2)
 
 `optionalPropertiesForOptionals` - mark properties as optional for optional Zod types
 
@@ -337,7 +337,7 @@ result:
 
 There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
 
-##### Option 1 - providing an identifier using `withGetType()`:
+##### Option 1 providing an identifier using `withGetType()`:
 
 ```ts
 import { z } from 'zod'
@@ -373,7 +373,8 @@ result:
 }
 ```
 
-##### Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
+##### Option 2
+Resolve enums. This is the same as before, but you just need to pass an option:
 
 ```ts
 const TreeTSType = zodToTs(TreeSchema, { resolveNativeEnums: true })
