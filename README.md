@@ -374,6 +374,7 @@ result:
 ```
 
 ##### Option 2
+
 Resolve enums. This is the same as before, but you just need to pass an option:
 
 ```ts
