@@ -2,7 +2,8 @@ import { dedent } from 'ts-dedent'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { printNode, zodToTs } from '../src'
+import { zodToTs } from '../src'
+import { printNodeTest } from './utils.js'
 
 const PrimitiveSchema = z.object({
   username: z.string(),
@@ -109,7 +110,7 @@ describe('PrimitiveSchema', () => {
         nev: never;
     }`)
 
-    const printedNode = printNode(node)
+    const printedNode = printNodeTest(node)
 
     expect(printedNode).toStrictEqual(expectedType)
   })

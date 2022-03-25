@@ -2,7 +2,8 @@ import { dedent } from 'ts-dedent'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { createTypeAlias, printNode, zodToTs } from '../src'
+import { createTypeAlias, zodToTs } from '../src'
+import { printNodeTest } from './utils.js'
 
 const UserSchema = z.object({
   username: z.string(),
@@ -49,7 +50,7 @@ describe('type alias', () => {
           age: number;
       };`)
 
-    const printedNode = printNode(typeAlias)
+    const printedNode = printNodeTest(typeAlias)
 
     expect(printedNode).toStrictEqual(expectedType)
   })
