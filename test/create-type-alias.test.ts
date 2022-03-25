@@ -3,7 +3,7 @@ import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { createTypeAlias, zodToTs } from '../src'
-import { printNodeTest } from './utils.js'
+import { printNodeTest } from './utils'
 
 const UserSchema = z.object({
   username: z.string(),
