@@ -2,7 +2,8 @@ import { dedent } from 'ts-dedent'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { printNode, zodToTs } from '../src'
+import { zodToTs } from '../src'
+import { printNodeTest } from './utils'
 
 const ItemsSchema = z.object({
   id: z.number(),
@@ -39,7 +40,7 @@ describe('z.array()', () => {
         value: string;
     }[]`)
 
-    const printedNode = printNode(node)
+    const printedNode = printNodeTest(node)
 
     expect(printedNode).toStrictEqual(expectedType)
   })

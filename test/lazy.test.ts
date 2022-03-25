@@ -2,7 +2,8 @@ import { dedent } from 'ts-dedent'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { printNode, zodToTs } from '../src'
+import { zodToTs } from '../src'
+import { printNodeTest } from './utils'
 
 type User = {
   username: string
@@ -48,7 +49,7 @@ describe('z.lazy() referencing root type', () => {
         friends: User[];
     }`)
 
-    const printedNode = printNode(node)
+    const printedNode = printNodeTest(node)
 
     expect(printedNode).toStrictEqual(expectedType)
   })
@@ -62,7 +63,7 @@ describe('z.lazy() referencing root type', () => {
         friends: Identifier[];
     }`)
 
-    const printedNode = printNode(nodeWithoutSpecifiedIdentifier)
+    const printedNode = printNodeTest(nodeWithoutSpecifiedIdentifier)
 
     expect(printedNode).to.deep.equal(expectedType)
   })

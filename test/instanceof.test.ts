@@ -1,7 +1,8 @@
 import dedent from 'ts-dedent'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { printNode, withGetType, zodToTs } from '../src'
+import { withGetType, zodToTs } from '../src'
+import { printNodeTest } from './utils'
 
 const dateType = withGetType(z.instanceof(Date), (ts) => ts.factory.createIdentifier('Date'))
 
@@ -20,7 +21,7 @@ describe('z.instanceof()', () => {
         date: Date;
     }`)
 
-    const printedNode = printNode(node)
+    const printedNode = printNodeTest(node)
 
     expect(printedNode).toStrictEqual(expectedType)
   })
