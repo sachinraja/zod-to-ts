@@ -49,11 +49,11 @@ const ObjectWithOptionalStringSchema = z.object({
   optional: OptionalStringSchema,
 })
 
-describe('z.optional() - optionalPropertiesForOptionals flag', () => {
-  it('does not have optional fields', () => {
+describe('z.optional() - treatOptionalsAs flag', () => {
+  it('has only undefined but not optional', () => {
     const { node: nodeFlagDefault } = zodToTs(ObjectWithOptionalStringSchema, undefined)
     const { node: nodeFlagFalse } = zodToTs(ObjectWithOptionalStringSchema, undefined, {
-      optionalPropertiesForOptionals: false,
+      treatOptionalsAs: 'undefined',
     })
 
     const expectedType = dedent `
@@ -64,15 +64,36 @@ describe('z.optional() - optionalPropertiesForOptionals flag', () => {
     expect(printNodeTest(nodeFlagFalse)).toStrictEqual(expectedType)
   })
 
-  it('has optional fields', () => {
-    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, { optionalPropertiesForOptionals: true })
+  it('has optional but not undefined', () => {
+    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, { treatOptionalsAs: 'optional' })
+
+    const expectedType = dedent `
+    {
+        optional?: string;
+    }`
+    const printedNode = printNodeTest(node)
+    expect(printedNode).toStrictEqual(expectedType)
+  })
+
+  it('has optional and undefined', () => {
+    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, {
+      treatOptionalsAs: 'both',
+    })
 
     const expectedType = dedent `
     {
         optional?: string | undefined;
     }`
-    const printedNode = printNodeTest(node)
-    expect(printedNode).toStrictEqual(expectedType)
+    expect(printNodeTest(node)).toStrictEqual(expectedType)
+  })
+
+  it('treatOptionalsAs:optional should be irrelevant for unions', () => {
+    const { node } = zodToTs(z.union([z.string().optional(), z.number().optional()]).optional(), undefined, {
+      treatOptionalsAs: 'optional',
+    })
+
+    const expectedType = dedent `((string | undefined) | (number | undefined)) | undefined`
+    expect(printNodeTest(node)).toStrictEqual(expectedType)
   })
 })
 

@@ -4,12 +4,13 @@ export type LiteralType = string | number | boolean
 
 export type ZodToTsOptions = {
   resolveNativeEnums?: boolean
-  optionalPropertiesForOptionals?: boolean
+  treatOptionalsAs?: 'undefined' | 'optional' | 'both'
 }
 export type RequiredZodToTsOptions = Required<ZodToTsOptions>
 
 export type ZodToTsStore = {
   nativeEnums: ts.EnumDeclaration[]
+  parentIsObject: boolean
 }
 
 export type ZodToTsReturn = {

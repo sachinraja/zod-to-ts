@@ -117,20 +117,32 @@ result:
 
 `resolveNativeEnums` - embed the enums before the schema without actually depending on an external enum type. [See](#option-2)
 
-`optionalPropertiesForOptionals` - mark properties as optional for optional Zod types
+`treatOptionalsAs` - "undefined"(default) | "optional" | "both" - treat ZodOptional properties of ZodObject
 
 ```ts
 const Schema = z.object({
   optional: z.string().optional(),
 })
+
 const { node } = zodToTs(Schema, 'Schema', {
-  optionalPropertiesForOptionals: true,
+    treatOptionalsAs: //'undefined' | 'optional' | 'both' ,
 })
 ```
 
 result:
 
 ```
+"undefined":
+{
+    optional: string | undefined
+}
+
+"optional":
+{
+    optional?: string
+}
+
+"both":
 {
     optional?: string | undefined
 }

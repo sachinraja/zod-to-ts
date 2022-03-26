@@ -32,7 +32,7 @@ const callGetType = (
 }
 
 export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => {
-  const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true, optionalPropertiesForOptionals: false }
+  const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true, treatOptionalsAs: 'undefined' }
   return { ...resolved, ...raw }
 }
 
@@ -45,7 +45,7 @@ export const zodToTs = (
 
   const resolvedOptions = resolveOptions(options)
 
-  const store: ZodToTsStore = { nativeEnums: [] }
+  const store: ZodToTsStore = { nativeEnums: [], parentIsObject: false }
 
   const node = zodToTsNode(zod, resolvedIdentifier, store, resolvedOptions)
 
@@ -86,12 +86,14 @@ const zodToTsNode = (
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
         const zodAny = value as ZodTypeAny
+        otherArgs[1].parentIsObject = true
         const type = zodToTsNode(zodAny, ...otherArgs)
 
+        const flagsRequireOptional = options.treatOptionalsAs === 'both' || options.treatOptionalsAs === 'optional'
         return f.createPropertySignature(
           undefined,
           f.createIdentifier(key),
-          zodAny._def.typeName === 'ZodOptional' && options.optionalPropertiesForOptionals
+          zodAny._def.typeName === 'ZodOptional' && flagsRequireOptional
             ? f.createToken(ts.SyntaxKind.QuestionToken)
             : undefined,
           type,
@@ -159,6 +161,15 @@ const zodToTsNode = (
 
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
+      const flagsRequireUndefined = options.treatOptionalsAs === 'undefined' || options.treatOptionalsAs === 'both'
+      if (store.parentIsObject && flagsRequireUndefined) {
+        return f.createUnionTypeNode([
+          innerType,
+          f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+        ])
+      } else if (store.parentIsObject) {
+        return innerType
+      }
       return f.createUnionTypeNode([
         innerType,
         f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
@@ -305,7 +316,7 @@ const zodToTsNode = (
       return type
     }
   }
-
+  store.parentIsObject = typeName === 'ZodObject'
   return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
 }
 
