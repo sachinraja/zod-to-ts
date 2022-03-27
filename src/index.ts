@@ -5,6 +5,7 @@ import {
   GetTypeFunction,
   LiteralType,
   RequiredZodToTsOptions,
+  ZodToTsNodeParams,
   ZodToTsOptions,
   ZodToTsReturn,
   ZodToTsStore,
@@ -45,7 +46,7 @@ export const zodToTs = (
 
   const resolvedOptions = resolveOptions(options)
 
-  const store: ZodToTsStore = { nativeEnums: [], parentIsObject: false }
+  const store: ZodToTsStore = { nativeEnums: [] }
 
   const node = zodToTsNode(zod, resolvedIdentifier, store, resolvedOptions)
 
@@ -57,6 +58,7 @@ const zodToTsNode = (
   identifier: string,
   store: ZodToTsStore,
   options: RequiredZodToTsOptions,
+  params?: ZodToTsNodeParams,
 ) => {
   const { typeName } = zod._def
 
@@ -86,8 +88,7 @@ const zodToTsNode = (
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
         const zodAny = value as ZodTypeAny
-        otherArgs[1].parentIsObject = true
-        const type = zodToTsNode(zodAny, ...otherArgs)
+        const type = zodToTsNode(zodAny, ...otherArgs, { parentIsObject: true })
 
         const flagsRequireOptional = options.treatOptionalsAs === 'both' || options.treatOptionalsAs === 'optional'
         return f.createPropertySignature(
@@ -162,12 +163,12 @@ const zodToTsNode = (
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
       const flagsRequireUndefined = options.treatOptionalsAs === 'undefined' || options.treatOptionalsAs === 'both'
-      if (store.parentIsObject && flagsRequireUndefined) {
+      if (params?.parentIsObject && flagsRequireUndefined) {
         return f.createUnionTypeNode([
           innerType,
           f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
         ])
-      } else if (store.parentIsObject) {
+      } else if (params?.parentIsObject) {
         return innerType
       }
       return f.createUnionTypeNode([
@@ -316,7 +317,6 @@ const zodToTsNode = (
       return type
     }
   }
-  store.parentIsObject = typeName === 'ZodObject'
   return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
 }
 

@@ -6,11 +6,15 @@ export type ZodToTsOptions = {
   resolveNativeEnums?: boolean
   treatOptionalsAs?: 'undefined' | 'optional' | 'both'
 }
+
+export interface ZodToTsNodeParams {
+  parentIsObject?: boolean
+}
+
 export type RequiredZodToTsOptions = Required<ZodToTsOptions>
 
 export type ZodToTsStore = {
   nativeEnums: ts.EnumDeclaration[]
-  parentIsObject: boolean
 }
 
 export type ZodToTsReturn = {

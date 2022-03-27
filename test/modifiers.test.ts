@@ -45,54 +45,81 @@ describe('z.optional()', () => {
   })
 })
 
-const ObjectWithOptionalStringSchema = z.object({
+const ObjectWithOptionals = z.object({
   optional: OptionalStringSchema,
+  required: z.string(),
+  tuple: z.tuple([
+    z.string().optional(),
+    z.number(),
+    z.object({
+      optional: z.string().optional(),
+      required: z.string(),
+    }),
+  ]).optional(),
 })
 
 describe('z.optional() - treatOptionalsAs flag', () => {
   it('has only undefined but not optional', () => {
-    const { node: nodeFlagDefault } = zodToTs(ObjectWithOptionalStringSchema, undefined)
-    const { node: nodeFlagFalse } = zodToTs(ObjectWithOptionalStringSchema, undefined, {
+    const { node: nodeFlagDefault } = zodToTs(ObjectWithOptionals, undefined)
+    const { node: nodeFlagFalse } = zodToTs(ObjectWithOptionals, undefined, {
       treatOptionalsAs: 'undefined',
     })
 
-    const expectedType = dedent `
-    {
+    const expectedType = dedent `{
         optional: string | undefined;
+        required: string;
+        tuple: [
+            string | undefined,
+            number,
+            {
+                optional: string | undefined;
+                required: string;
+            }
+        ] | undefined;
     }`
+
     expect(printNodeTest(nodeFlagDefault)).toStrictEqual(expectedType)
     expect(printNodeTest(nodeFlagFalse)).toStrictEqual(expectedType)
   })
 
   it('has optional but not undefined', () => {
-    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, { treatOptionalsAs: 'optional' })
+    const { node } = zodToTs(ObjectWithOptionals, undefined, { treatOptionalsAs: 'optional' })
 
-    const expectedType = dedent `
-    {
+    const expectedType = dedent `{
         optional?: string;
+        required: string;
+        tuple?: [
+            string | undefined,
+            number,
+            {
+                optional?: string;
+                required: string;
+            }
+        ];
     }`
+
     const printedNode = printNodeTest(node)
     expect(printedNode).toStrictEqual(expectedType)
   })
 
   it('has optional and undefined', () => {
-    const { node } = zodToTs(ObjectWithOptionalStringSchema, undefined, {
+    const { node } = zodToTs(ObjectWithOptionals, undefined, {
       treatOptionalsAs: 'both',
     })
 
-    const expectedType = dedent `
-    {
+    const expectedType = dedent `{
         optional?: string | undefined;
+        required: string;
+        tuple?: [
+            string | undefined,
+            number,
+            {
+                optional?: string | undefined;
+                required: string;
+            }
+        ] | undefined;
     }`
-    expect(printNodeTest(node)).toStrictEqual(expectedType)
-  })
 
-  it('treatOptionalsAs:optional should be irrelevant for unions', () => {
-    const { node } = zodToTs(z.union([z.string().optional(), z.number().optional()]).optional(), undefined, {
-      treatOptionalsAs: 'optional',
-    })
-
-    const expectedType = dedent `((string | undefined) | (number | undefined)) | undefined`
     expect(printNodeTest(node)).toStrictEqual(expectedType)
   })
 })
