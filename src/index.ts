@@ -163,12 +163,7 @@ const zodToTsNode = (
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
       const flagsRequireUndefined = options.treatOptionalsAs === 'undefined' || options.treatOptionalsAs === 'both'
-      if (params?.parentIsObject && flagsRequireUndefined) {
-        return f.createUnionTypeNode([
-          innerType,
-          f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
-        ])
-      } else if (params?.parentIsObject) {
+      if (params?.parentIsObject && !flagsRequireUndefined) {
         return innerType
       }
       return f.createUnionTypeNode([
