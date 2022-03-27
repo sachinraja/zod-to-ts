@@ -162,8 +162,7 @@ const zodToTsNode = (
 
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
-      const flagsRequireUndefined = options.treatOptionalsAs === 'undefined' || options.treatOptionalsAs === 'both'
-      if (params?.parentIsObject && !flagsRequireUndefined) {
+      if (params?.parentIsObject && options.treatOptionalsAs === 'optional') {
         return innerType
       }
       return f.createUnionTypeNode([
