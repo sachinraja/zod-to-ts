@@ -48,6 +48,8 @@ describe('z.optional()', () => {
 const ObjectWithOptionals = z.object({
   optional: OptionalStringSchema,
   required: z.string(),
+  transform: z.number().optional().transform((arg) => arg),
+  or: z.number().optional().or(z.string()),
   tuple: z.tuple([
     z.string().optional(),
     z.number(),
@@ -68,6 +70,8 @@ describe('z.optional() - treatOptionalsAs flag', () => {
     const expectedType = dedent `{
         optional: string | undefined;
         required: string;
+        transform: number | undefined;
+        or: (number | undefined) | string;
         tuple: [
             string | undefined,
             number,
@@ -88,6 +92,8 @@ describe('z.optional() - treatOptionalsAs flag', () => {
     const expectedType = dedent `{
         optional?: string;
         required: string;
+        transform?: number;
+        or?: (number | undefined) | string;
         tuple?: [
             string | undefined,
             number,
@@ -110,6 +116,8 @@ describe('z.optional() - treatOptionalsAs flag', () => {
     const expectedType = dedent `{
         optional?: string | undefined;
         required: string;
+        transform?: number | undefined;
+        or?: (number | undefined) | string;
         tuple?: [
             string | undefined,
             number,

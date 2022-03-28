@@ -7,10 +7,6 @@ export type ZodToTsOptions = {
   treatOptionalsAs?: 'undefined' | 'optional' | 'both'
 }
 
-export interface ZodToTsNodeParams {
-  parentIsObject?: boolean
-}
-
 export type RequiredZodToTsOptions = Required<ZodToTsOptions>
 
 export type ZodToTsStore = {

@@ -1,6 +1,7 @@
 import ts from 'typescript'
 import { ZodTypeAny } from 'zod'
 import { GetType, GetTypeFunction } from './types'
+
 const { factory: f } = ts
 
 export const maybeIdentifierToTypeReference = (identifier: ts.Identifier | ts.TypeNode) => {
@@ -35,3 +36,5 @@ export const withGetType = <T extends ZodTypeAny & GetType>(schema: T, getType: 
   schema.getType = getType
   return schema
 }
+
+export const isUnionTypeNode = (node: ts.TypeNode): node is ts.UnionTypeNode => node.kind === ts.SyntaxKind.UnionType

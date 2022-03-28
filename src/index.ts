@@ -5,7 +5,6 @@ import {
   GetTypeFunction,
   LiteralType,
   RequiredZodToTsOptions,
-  ZodToTsNodeParams,
   ZodToTsOptions,
   ZodToTsReturn,
   ZodToTsStore,
@@ -14,6 +13,7 @@ import {
   createTypeAlias,
   createTypeReferenceFromString,
   createUnknownKeywordNode,
+  isUnionTypeNode,
   maybeIdentifierToTypeReference,
   printNode,
 } from './utils'
@@ -58,7 +58,6 @@ const zodToTsNode = (
   identifier: string,
   store: ZodToTsStore,
   options: RequiredZodToTsOptions,
-  params?: ZodToTsNodeParams,
 ) => {
   const { typeName } = zod._def
 
@@ -85,16 +84,26 @@ const zodToTsNode = (
       return zodLiteralToTs(zod._def.value)
     case 'ZodObject': {
       const properties = Object.entries(zod._def.shape())
-
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
         const zodAny = value as ZodTypeAny
-        const type = zodToTsNode(zodAny, ...otherArgs, { parentIsObject: true })
+        let type = zodToTsNode(zodAny, ...otherArgs) as ts.TypeNode
 
+        const optionalMember = zodAny._def.typeName === 'ZodOptional'
         const flagsRequireOptional = options.treatOptionalsAs === 'both' || options.treatOptionalsAs === 'optional'
+
+        if (
+          optionalMember && options.treatOptionalsAs === 'optional' && isUnionTypeNode(type)
+        ) {
+          // todo typings
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          type = f.updateUnionTypeNode(type, type.types.filter(p => p.kind !== ts.SyntaxKind.UndefinedKeyword))
+        }
+
         return f.createPropertySignature(
           undefined,
           f.createIdentifier(key),
-          zodAny._def.typeName === 'ZodOptional' && flagsRequireOptional
+          optionalMember && flagsRequireOptional
             ? f.createToken(ts.SyntaxKind.QuestionToken)
             : undefined,
           type,
@@ -162,9 +171,6 @@ const zodToTsNode = (
 
     case 'ZodOptional': {
       const innerType = zodToTsNode(zod._def.innerType, ...otherArgs) as ts.TypeNode
-      if (params?.parentIsObject && options.treatOptionalsAs === 'optional') {
-        return innerType
-      }
       return f.createUnionTypeNode([
         innerType,
         f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
