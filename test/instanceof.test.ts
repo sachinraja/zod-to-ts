@@ -1,4 +1,3 @@
-import dedent from 'ts-dedent'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { withGetType, zodToTs } from '../src'
@@ -15,14 +14,11 @@ describe('z.instanceof()', () => {
   const { node } = zodToTs(schema, 'Item')
 
   it('outputs correct typescript', () => {
-    const expectedType = dedent(`
-    {
-        name: string;
-        date: Date;
-    }`)
-
-    const printedNode = printNodeTest(node)
-
-    expect(printedNode).toStrictEqual(expectedType)
+    expect(printNodeTest(node)).toMatchInlineSnapshot(`
+      "{
+          name: string;
+          date: Date;
+      }"
+    `)
   })
 })
