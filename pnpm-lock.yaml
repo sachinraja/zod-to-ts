@@ -12,7 +12,6 @@ specifiers:
   lint-staged: 12.3.4
   npm-run-all: 4.1.5
   rimraf: 3.0.2
-  ts-dedent: 2.2.0
   tsup: 5.11.13
   typescript: 4.5.5
   vite: 2.8.4
@@ -31,7 +30,6 @@ devDependencies:
   lint-staged: 12.3.4
   npm-run-all: 4.1.5
   rimraf: 3.0.2
-  ts-dedent: 2.2.0
   tsup: 5.11.13_typescript@4.5.5
   typescript: 4.5.5
   vite: 2.8.4
@@ -2115,11 +2113,6 @@ packages:
   /tree-kill/1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
-    dev: true
-
-  /ts-dedent/2.2.0:
-    resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
-    engines: {node: '>=6.10'}
     dev: true
 
   /ts-interface-checker/0.1.13:
