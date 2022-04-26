@@ -1,6 +1,6 @@
 {
   "name": "zod-to-ts",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "type": "module",
   "description": "generate TypeScript types from your Zod schema",
   "repository": {
