@@ -7,6 +7,21 @@ import { printNodeTest } from './utils'
 
 const OptionalStringSchema = z.string().optional()
 
+const ObjectWithOptionals = z.object({
+  optional: OptionalStringSchema,
+  required: z.string(),
+  transform: z.number().optional().transform((arg) => arg),
+  or: z.number().optional().or(z.string()),
+  tuple: z.tuple([
+    z.string().optional(),
+    z.number(),
+    z.object({
+      optional: z.string().optional(),
+      required: z.string(),
+    }),
+  ]).optional(),
+})
+
 describe('z.optional()', () => {
   const { node } = zodToTs(OptionalStringSchema)
 
@@ -23,6 +38,27 @@ describe('z.optional()', () => {
     const expectedType = 'string | undefined'
     const printedNode = printNodeTest(node)
     expect(printedNode).to.deep.equal(expectedType)
+  })
+
+  it('for optionals should output ?: property as well as undefined union', () => {
+    const { node } = zodToTs(ObjectWithOptionals, undefined)
+
+    const expectedType = dedent `{
+      optional?: string | undefined;
+      required: string;
+      transform?: number | undefined;
+      or?: (number | undefined) | string;
+      tuple?: [
+          string | undefined,
+          number,
+          {
+              optional?: string | undefined;
+              required: string;
+          }
+      ] | undefined;
+    }`
+
+    expect(printNodeTest(node)).toStrictEqual(expectedType)
   })
 })
 

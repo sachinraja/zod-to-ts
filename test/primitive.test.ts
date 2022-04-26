@@ -53,7 +53,7 @@ describe('PrimitiveSchema', () => {
       ts.factory.createPropertySignature(
         undefined,
         ts.factory.createIdentifier('undef'),
-        undefined,
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
         ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
       ),
       ts.factory.createPropertySignature(
@@ -65,7 +65,7 @@ describe('PrimitiveSchema', () => {
       ts.factory.createPropertySignature(
         undefined,
         ts.factory.createIdentifier('vo'),
-        undefined,
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
         ts.factory.createUnionTypeNode([
           ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
           ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
@@ -74,13 +74,13 @@ describe('PrimitiveSchema', () => {
       ts.factory.createPropertySignature(
         undefined,
         ts.factory.createIdentifier('an'),
-        undefined,
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
         ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
       ),
       ts.factory.createPropertySignature(
         undefined,
         ts.factory.createIdentifier('unknow'),
-        undefined,
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
         ts.factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
       ),
       ts.factory.createPropertySignature(
@@ -102,11 +102,11 @@ describe('PrimitiveSchema', () => {
         age: number;
         isAdmin: boolean;
         createdAt: Date;
-        undef: undefined;
+        undef?: undefined;
         nu: null;
-        vo: void | undefined;
-        an: any;
-        unknow: unknown;
+        vo?: void | undefined;
+        an?: any;
+        unknow?: unknown;
         nev: never;
     }`)
 
