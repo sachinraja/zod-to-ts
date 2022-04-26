@@ -85,12 +85,16 @@ const zodToTsNode = (
       const properties = Object.entries(zod._def.shape())
 
       const members: ts.TypeElement[] = properties.map(([key, value]) => {
-        const type = zodToTsNode(value as ZodTypeAny, ...otherArgs)
+        const nextZodNode = value as ZodTypeAny
+        const type = zodToTsNode(nextZodNode, ...otherArgs)
+
+        const { typeName: nextZodNodeTypeName } = nextZodNode._def
+        const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
 
         return f.createPropertySignature(
           undefined,
           f.createIdentifier(key),
-          undefined,
+          isOptional ? f.createToken(ts.SyntaxKind.QuestionToken) : undefined,
           type,
         )
       })
