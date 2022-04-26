@@ -20,6 +20,19 @@ describe('PrimitiveSchema', () => {
   const { node } = zodToTs(PrimitiveSchema, 'User')
 
   it('outputs correct typescript', () => {
-    expect(printNodeTest(node)).toMatchInlineSnapshot()
+    expect(printNodeTest(node)).toMatchInlineSnapshot(`
+      "{
+          username: string;
+          age: number;
+          isAdmin: boolean;
+          createdAt: Date;
+          undef?: undefined;
+          nu: null;
+          vo?: void | undefined;
+          an?: any;
+          unknow?: unknown;
+          nev: never;
+      }"
+    `)
   })
 })
