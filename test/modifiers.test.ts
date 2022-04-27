@@ -26,7 +26,7 @@ describe('z.optional()', () => {
     expect(printNodeTest(node)).toMatchInlineSnapshot('"string | undefined"')
   })
 
-  it('for optionals should output ?: property as well as undefined union', () => {
+  it('should output `?:` and undefined union for optional properties', () => {
     const { node } = zodToTs(ObjectWithOptionals)
 
     expect(printNodeTest(node)).toMatchInlineSnapshot(`
