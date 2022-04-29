@@ -13,6 +13,7 @@ import {
   createTypeAlias,
   createTypeReferenceFromString,
   createUnknownKeywordNode,
+  getIdentifierOrStringLiteral,
   maybeIdentifierToTypeReference,
   printNode,
 } from './utils'
@@ -93,7 +94,7 @@ const zodToTsNode = (
 
         return f.createPropertySignature(
           undefined,
-          f.createIdentifier(key),
+          getIdentifierOrStringLiteral(key),
           isOptional ? f.createToken(ts.SyntaxKind.QuestionToken) : undefined,
           type,
         )
@@ -132,10 +133,14 @@ const zodToTsNode = (
       if (!type) return createUnknownKeywordNode()
 
       if (options.resolveNativeEnums) {
-        const enumMembers = Object.entries(zod._def.values as Record<string, string>).map(([key, value]) => {
+        const enumMembers = Object.entries(zod._def.values as Record<string, string | number>).map(([key, value]) => {
+          const literal = typeof value === 'number'
+            ? f.createNumericLiteral(value)
+            : f.createStringLiteral(value)
+
           return f.createEnumMember(
-            f.createIdentifier(key),
-            f.createStringLiteral(value),
+            getIdentifierOrStringLiteral(key),
+            literal,
           )
         })
 

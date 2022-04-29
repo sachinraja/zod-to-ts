@@ -35,3 +35,13 @@ export const withGetType = <T extends ZodTypeAny & GetType>(schema: T, getType: 
   schema.getType = getType
   return schema
 }
+
+const identifierRE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
+
+export const getIdentifierOrStringLiteral = (str: string) => {
+  if (identifierRE.test(str)) {
+    return f.createIdentifier(str)
+  }
+
+  return f.createStringLiteral(str)
+}

@@ -5,6 +5,7 @@ enum Fruits {
   Apple = 'apple',
   Banana = 'banana',
   Cantaloupe = 'cantaloupe',
+  A = 5,
 }
 
 const example2 = z.object({
@@ -92,12 +93,18 @@ export const example = z.object({
   aa: nativeEnum,
   bb: dateType,
   cc: z.lazy(() => z.string()),
+  dd: z.nativeEnum(Fruits),
 })
 
 type A = z.infer<typeof example>['bb']
 
 type B = z.infer<typeof pickedSchema>
 
-const { node } = zodToTs(example, 'Example')
+const { node, store } = zodToTs(example, 'Example', { resolveNativeEnums: true })
 
 console.log(printNode(node))
+
+console.log('\n\nNative Enums\n---------------')
+for (const e of store.nativeEnums) {
+  console.log(printNode(e))
+}
