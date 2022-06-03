@@ -12,11 +12,27 @@ const identifier = 'User'
 
 describe('type alias', () => {
   const { node } = zodToTs(UserSchema, identifier)
-  const typeAlias = createTypeAlias(node, identifier)
 
   it('outputs correct typescript', () => {
+    const typeAlias = createTypeAlias(node, identifier)
+
     expect(printNodeTest(typeAlias)).toMatchInlineSnapshot(`
       "type User = {
+          username: string;
+          age: number;
+      };"
+    `)
+  })
+
+  it('optionally takes a comment', () => {
+    const typeAlias = createTypeAlias(
+      node,
+      identifier,
+      'A basic user',
+    )
+
+    expect(printNodeTest(typeAlias)).toMatchInlineSnapshot(`
+      "/** A basic user */ type User = {
           username: string;
           age: number;
       };"

@@ -15,14 +15,21 @@ export const createTypeReferenceFromString = (identifier: string) =>
   f.createTypeReferenceNode(f.createIdentifier(identifier))
 
 export const createUnknownKeywordNode = () => f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
-export const createTypeAlias = (node: ts.TypeNode, identifier: string) => {
-  return f.createTypeAliasDeclaration(
+
+export const createTypeAlias = (node: ts.TypeNode, identifier: string, comment?: string) => {
+  const typeAlias = f.createTypeAliasDeclaration(
     undefined,
     undefined,
     f.createIdentifier(identifier),
     undefined,
     node,
   )
+
+  if (comment) {
+    addJsDocComment(typeAlias, comment)
+  }
+
+  return typeAlias
 }
 
 export const printNode = (node: ts.Node, printerOptions?: ts.PrinterOptions) => {
@@ -44,4 +51,8 @@ export const getIdentifierOrStringLiteral = (str: string) => {
   }
 
   return f.createStringLiteral(str)
+}
+
+export const addJsDocComment = (node: ts.Node, text: string) => {
+  ts.addSyntheticLeadingComment(node, ts.SyntaxKind.MultiLineCommentTrivia, `* ${text} `)
 }

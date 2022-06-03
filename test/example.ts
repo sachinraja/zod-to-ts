@@ -100,7 +100,11 @@ type A = z.infer<typeof example>['bb']
 
 type B = z.infer<typeof pickedSchema>
 
-const { node, store } = zodToTs(example, 'Example', { resolveNativeEnums: true })
+const simpleSchema = z.object({
+  num: z.number().describe('number'),
+})
+
+const { node, store } = zodToTs(simpleSchema, 'Example', { resolveNativeEnums: true })
 
 console.log(printNode(node))
 

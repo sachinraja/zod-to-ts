@@ -51,7 +51,12 @@ import { createTypeAlias, zodToTs } from 'zod-to-ts'
 
 const identifier = 'User'
 const { node } = zodToTs(UserSchema, identifier)
-const typeAlias = createTypeAlias(node, identifier)
+const typeAlias = createTypeAlias(
+  node,
+  identifier,
+  // optionally pass a comment
+  // comment: UserSchema.description
+)
 ```
 
 result:

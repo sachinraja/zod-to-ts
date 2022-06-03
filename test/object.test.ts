@@ -53,7 +53,6 @@ it('escapes correctly', () => {
 
   const { node } = zodToTs(schema)
 
-  console.log(printNodeTest(node))
   expect(printNodeTest(node)).toMatchInlineSnapshot(`
     "{
         \\"\\\\\\\\\\": string;
@@ -65,6 +64,22 @@ it('escapes correctly', () => {
         \\"4t\\"?: any;
         _r?: any;
         \\"-r\\"?: undefined;
+    }"
+  `)
+})
+
+it('supports zod.describe()', () => {
+  const schema = z.object({
+    name: z.string().describe('The name of the item'),
+    price: z.number().describe('The price of the item'),
+  })
+
+  const { node } = zodToTs(schema)
+
+  expect(printNodeTest(node)).toMatchInlineSnapshot(`
+    "{
+        /** The name of the item */ name: string;
+        /** The price of the item */ price: number;
     }"
   `)
 })

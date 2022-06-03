@@ -10,6 +10,7 @@ import {
   ZodToTsStore,
 } from './types'
 import {
+  addJsDocComment,
   createTypeAlias,
   createTypeReferenceFromString,
   createUnknownKeywordNode,
@@ -67,21 +68,60 @@ const zodToTsNode = (
     return maybeIdentifierToTypeReference(getTypeType)
   }
 
-  const zodPrimitive = zodPrimitiveToTs(typeName)
-  if (zodPrimitive) return zodPrimitive
-
   const otherArgs = [identifier, store, options] as const
 
   switch (typeName) {
+    case 'ZodString':
+      return f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+    case 'ZodNumber':
+      return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+    case 'ZodBigInt':
+      return f.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
+    case 'ZodBoolean':
+      return f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+    case 'ZodDate':
+      return f.createTypeReferenceNode(f.createIdentifier('Date'))
+    case 'ZodUndefined':
+      return f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+    case 'ZodNull':
+      return f.createLiteralTypeNode(f.createNull())
+    case 'ZodVoid':
+      return f.createUnionTypeNode([
+        f.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
+        f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+      ])
+    case 'ZodAny':
+      return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+    case 'ZodUnknown':
+      return createUnknownKeywordNode()
+    case 'ZodNever':
+      return f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
     case 'ZodLazy': {
       // it is impossible to determine what the lazy value is referring to
       // so we force the user to declare it
       if (!getTypeType) return createTypeReferenceFromString(identifier)
       break
     }
-    case 'ZodLiteral':
+    case 'ZodLiteral': {
       // z.literal('hi') -> 'hi'
-      return zodLiteralToTs(zod._def.value)
+      let literal: ts.LiteralExpression | ts.BooleanLiteral
+
+      const literalValue = zod._def.value as LiteralType
+      switch (typeof literalValue) {
+        case 'number':
+          literal = f.createNumericLiteral(literalValue)
+          break
+        case 'boolean':
+          if (literalValue === true) literal = f.createTrue()
+          else literal = f.createFalse()
+          break
+        default:
+          literal = f.createStringLiteral(literalValue)
+          break
+      }
+
+      return f.createLiteralTypeNode(literal)
+    }
     case 'ZodObject': {
       const properties = Object.entries(zod._def.shape())
 
@@ -92,12 +132,18 @@ const zodToTsNode = (
         const { typeName: nextZodNodeTypeName } = nextZodNode._def
         const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
 
-        return f.createPropertySignature(
+        const propertySignature = f.createPropertySignature(
           undefined,
           getIdentifierOrStringLiteral(key),
           isOptional ? f.createToken(ts.SyntaxKind.QuestionToken) : undefined,
           type,
         )
+
+        if (nextZodNode.description) {
+          addJsDocComment(propertySignature, nextZodNode.description)
+        }
+
+        return propertySignature
       })
       return f.createTypeLiteralNode(members)
     }
@@ -313,68 +359,6 @@ const zodToTsNode = (
   }
 
   return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
-}
-
-const zodPrimitiveToTs = (zodPrimitive: string) => {
-  let node: ts.TypeNode | null = null
-  switch (zodPrimitive) {
-    case 'ZodString':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
-      break
-    case 'ZodNumber':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
-      break
-    case 'ZodBigInt':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
-      break
-    case 'ZodBoolean':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
-      break
-    case 'ZodDate':
-      node = f.createTypeReferenceNode(f.createIdentifier('Date'))
-      break
-    case 'ZodUndefined':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
-      break
-    case 'ZodNull':
-      node = f.createLiteralTypeNode(f.createNull())
-      break
-    case 'ZodVoid':
-      node = f.createUnionTypeNode([
-        f.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
-        f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
-      ])
-      break
-    case 'ZodAny':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
-      break
-    case 'ZodUnknown':
-      node = createUnknownKeywordNode()
-      break
-    case 'ZodNever':
-      node = f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
-  }
-
-  return node
-}
-
-const zodLiteralToTs = (value: LiteralType) => {
-  let literal: ts.LiteralExpression | ts.BooleanLiteral
-
-  switch (typeof value) {
-    case 'number':
-      literal = f.createNumericLiteral(value)
-      break
-    case 'boolean':
-      if (value === true) literal = f.createTrue()
-      else literal = f.createFalse()
-      break
-    default:
-      literal = f.createStringLiteral(value)
-      break
-  }
-
-  return f.createLiteralTypeNode(literal)
 }
 
 export { createTypeAlias, printNode }
