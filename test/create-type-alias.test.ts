@@ -32,7 +32,8 @@ describe('type alias', () => {
     )
 
     expect(printNodeTest(typeAlias)).toMatchInlineSnapshot(`
-      "/** A basic user */ type User = {
+      "/** A basic user */
+      type User = {
           username: string;
           age: number;
       };"
