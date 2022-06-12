@@ -78,8 +78,10 @@ it('supports zod.describe()', () => {
 
   expect(printNodeTest(node)).toMatchInlineSnapshot(`
     "{
-        /** The name of the item */ name: string;
-        /** The price of the item */ price: number;
+        /** The name of the item */
+        name: string;
+        /** The price of the item */
+        price: number;
     }"
   `)
 })

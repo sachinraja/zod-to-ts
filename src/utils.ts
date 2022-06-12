@@ -54,5 +54,5 @@ export const getIdentifierOrStringLiteral = (str: string) => {
 }
 
 export const addJsDocComment = (node: ts.Node, text: string) => {
-  ts.addSyntheticLeadingComment(node, ts.SyntaxKind.MultiLineCommentTrivia, `* ${text} `)
+  ts.addSyntheticLeadingComment(node, ts.SyntaxKind.MultiLineCommentTrivia, `* ${text} `, true)
 }
