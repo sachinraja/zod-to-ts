@@ -40,29 +40,29 @@
     "prepare": "husky install",
     "prepublishOnly": "pnpm build",
     "test": "vitest",
-    "example": "node --loader esbuild-node-loader test/example.ts"
+    "example": "tsx test/example.ts"
   },
   "peerDependencies": {
     "typescript": "^4",
     "zod": "^3"
   },
   "devDependencies": {
-    "@types/node": "17.0.30",
-    "@typescript-eslint/eslint-plugin": "5.21.0",
-    "@typescript-eslint/parser": "5.21.0",
-    "dprint": "0.27.0",
-    "esbuild-node-loader": "0.8.0",
-    "eslint": "8.14.0",
+    "@types/node": "18.11.3",
+    "@typescript-eslint/eslint-plugin": "5.40.1",
+    "@typescript-eslint/parser": "5.40.1",
+    "dprint": "0.32.1",
+    "eslint": "8.26.0",
     "eslint-config-prettier": "8.5.0",
-    "husky": "7.0.4",
-    "lint-staged": "12.4.1",
+    "husky": "8.0.1",
+    "lint-staged": "13.0.3",
     "npm-run-all": "4.1.5",
     "rimraf": "3.0.2",
-    "tsup": "5.12.6",
-    "typescript": "4.6.4",
-    "vite": "2.9.6",
-    "vitest": "0.10.0",
-    "zod": "3.14.4"
+    "tsup": "6.3.0",
+    "tsx": "3.10.4",
+    "typescript": "4.8.4",
+    "vite": "3.1.8",
+    "vitest": "0.24.3",
+    "zod": "3.19.1"
   },
   "sideEffects": false,
   "lint-staged": {
