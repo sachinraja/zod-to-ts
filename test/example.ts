@@ -94,17 +94,18 @@ export const example = z.object({
   bb: dateType,
   cc: z.lazy(() => z.string()),
   dd: z.nativeEnum(Fruits),
+  ee: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('circle'), radius: z.number() }),
+    z.object({ kind: z.literal('square'), x: z.number() }),
+    z.object({ kind: z.literal('triangle'), x: z.number(), y: z.number() }),
+  ]),
 })
 
-type A = z.infer<typeof example>['bb']
+type A = z.infer<typeof example>['ee']
 
 type B = z.infer<typeof pickedSchema>
 
-const simpleSchema = z.object({
-  num: z.number().describe('number'),
-})
-
-const { node, store } = zodToTs(simpleSchema, 'Example', { resolveNativeEnums: true })
+const { node, store } = zodToTs(example, 'Example', { resolveNativeEnums: true })
 
 console.log(printNode(node))
 

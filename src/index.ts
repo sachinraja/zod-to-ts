@@ -162,7 +162,15 @@ const zodToTsNode = (
 
     case 'ZodUnion': {
       // z.union([z.string(), z.number()]) -> string | number
-      const types = zod._def.options.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArgs))
+      const options: ZodTypeAny[] = zod._def.options
+      const types: ts.TypeNode[] = options.map((option) => zodToTsNode(option, ...otherArgs))
+      return f.createUnionTypeNode(types)
+    }
+
+    case 'ZodDiscriminatedUnion': {
+      // z.discriminatedUnion('kind', [z.object({ kind: z.literal('a'), a: z.string() }), z.object({ kind: z.literal('b'), b: z.number() })]) -> { kind: 'a', a: string } | { kind: 'b', b: number }
+      const options: ZodTypeAny[] = [...zod._def.options.values()]
+      const types: ts.TypeNode[] = options.map((option) => zodToTsNode(option, ...otherArgs))
       return f.createUnionTypeNode(types)
     }
 
