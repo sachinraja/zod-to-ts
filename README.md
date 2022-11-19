@@ -5,10 +5,10 @@ generate TypeScript types from your [Zod](https://github.com/colinhacks/zod) sch
 ## Installation
 
 ```
-npm install zod-to-ts zod typescript
+npm install zod-to-ts zod
 ```
 
-You must be on zod@3 and typescript@4.
+You must be on zod@3.
 
 ## Usage
 
