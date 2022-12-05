@@ -202,7 +202,6 @@ const zodToTsNode = (
           store.nativeEnums.push(
             f.createEnumDeclaration(
               undefined,
-              undefined,
               type,
               enumMembers,
             ),
@@ -247,7 +246,6 @@ const zodToTsNode = (
         undefined,
         undefined,
         [f.createParameterDeclaration(
-          undefined,
           undefined,
           undefined,
           f.createIdentifier('x'),
@@ -316,7 +314,6 @@ const zodToTsNode = (
         return f.createParameterDeclaration(
           undefined,
           undefined,
-          undefined,
           f.createIdentifier(`args_${index}`),
           undefined,
           argType,
@@ -326,7 +323,6 @@ const zodToTsNode = (
 
       argTypes.push(
         f.createParameterDeclaration(
-          undefined,
           undefined,
           f.createToken(ts.SyntaxKind.DotDotDotToken),
           f.createIdentifier(`args_${argTypes.length}`),
