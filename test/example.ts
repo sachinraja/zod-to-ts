@@ -101,10 +101,6 @@ export const example = z.object({
   ]),
 })
 
-type A = z.infer<typeof example>['ee']
-
-type B = z.infer<typeof pickedSchema>
-
 const { node, store } = zodToTs(example, 'Example', { resolveNativeEnums: true })
 
 console.log(printNode(node))
