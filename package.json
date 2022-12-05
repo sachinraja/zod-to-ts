@@ -1,6 +1,6 @@
 {
   "name": "@express-zod-api/zod-to-ts",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "description": "generate TypeScript types from your Zod schema",
   "repository": {
