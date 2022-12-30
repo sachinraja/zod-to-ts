@@ -19,7 +19,6 @@ export const createUnknownKeywordNode = () => f.createKeywordTypeNode(ts.SyntaxK
 export const createTypeAlias = (node: ts.TypeNode, identifier: string, comment?: string) => {
   const typeAlias = f.createTypeAliasDeclaration(
     undefined,
-    undefined,
     f.createIdentifier(identifier),
     undefined,
     node,

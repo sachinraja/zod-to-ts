@@ -5,6 +5,7 @@ export type LiteralType = string | number | boolean
 export type ZodToTsOptions = {
   resolveNativeEnums?: boolean
 }
+
 export type RequiredZodToTsOptions = Required<ZodToTsOptions>
 
 export type ZodToTsStore = {

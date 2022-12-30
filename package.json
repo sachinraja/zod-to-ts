@@ -1,84 +1,74 @@
 {
-  "name": "zod-to-ts",
-  "version": "1.1.1",
-  "type": "module",
-  "description": "generate TypeScript types from your Zod schema",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sachinraja/zod-to-ts.git"
-  },
-  "homepage": "https://github.com/sachinraja/zod-to-ts#readme",
-  "bugs": {
-    "url": "https://github.com/sachinraja/zod-to-ts/issues"
-  },
-  "main": "dist/index.cjs",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "import": "./dist/index.js",
-      "default": "./dist/index.cjs"
-    }
-  },
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "zod",
-    "typescript",
-    "generator"
-  ],
-  "scripts": {
-    "build": "pnpm clean && tsup",
-    "watch": "tsup --watch --no-dts",
-    "clean": "rimraf dist",
-    "format": "dprint fmt",
-    "lint": "run-p lint:*",
-    "lint:format": "dprint check",
-    "lint:types": "tsc",
-    "lint:js": "eslint .",
-    "prepare": "husky install",
-    "prepublishOnly": "pnpm build",
-    "test": "vitest",
-    "example": "tsx test/example.ts"
-  },
-  "peerDependencies": {
-    "typescript": "^4",
-    "zod": "^3"
-  },
-  "devDependencies": {
-    "@types/node": "18.11.3",
-    "@typescript-eslint/eslint-plugin": "5.40.1",
-    "@typescript-eslint/parser": "5.40.1",
-    "dprint": "0.32.1",
-    "eslint": "8.26.0",
-    "eslint-config-prettier": "8.5.0",
-    "husky": "8.0.1",
-    "lint-staged": "13.0.3",
-    "npm-run-all": "4.1.5",
-    "rimraf": "3.0.2",
-    "tsup": "6.3.0",
-    "tsx": "3.10.4",
-    "typescript": "4.8.4",
-    "vite": "3.1.8",
-    "vitest": "0.24.3",
-    "zod": "3.19.1"
-  },
-  "sideEffects": false,
-  "lint-staged": {
-    "*.{js,ts,md,json,yaml}": "dprint fmt"
-  },
-  "tsup": {
-    "entryPoints": [
-      "src/index.ts"
-    ],
-    "format": [
-      "esm",
-      "cjs"
-    ],
-    "dts": {
-      "resolve": true
-    },
-    "splitting": true
-  }
+	"name": "zod-to-ts",
+	"version": "1.1.1",
+	"type": "module",
+	"description": "generate TypeScript types from your Zod schema",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/sachinraja/zod-to-ts.git"
+	},
+	"homepage": "https://github.com/sachinraja/zod-to-ts#readme",
+	"bugs": {
+		"url": "https://github.com/sachinraja/zod-to-ts/issues"
+	},
+	"main": "dist/index.cjs",
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"import": "./dist/index.js",
+			"default": "./dist/index.cjs"
+		}
+	},
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"zod",
+		"typescript",
+		"generator"
+	],
+	"scripts": {
+		"build": "tsup",
+		"watch": "tsup --watch --no-dts",
+		"format": "dprint fmt",
+		"lint": "run-p lint:*",
+		"lint:format": "dprint check",
+		"lint:types": "tsc",
+		"lint:js": "eslint .",
+		"prepublishOnly": "pnpm build",
+		"test": "vitest",
+		"example": "tsx test/example.ts"
+	},
+	"peerDependencies": {
+		"typescript": "^4.9.4",
+		"zod": "^3"
+	},
+	"devDependencies": {
+		"@sachinraja/eslint-config": "0.2.0",
+		"@types/node": "18.11.18",
+		"dprint": "0.34.1",
+		"eslint": "8.30.0",
+		"tsup": "6.5.0",
+		"tsx": "3.12.1",
+		"typescript": "4.9.4",
+		"vite": "4.0.3",
+		"vitest": "0.26.2",
+		"zod": "3.20.2"
+	},
+	"sideEffects": false,
+	"tsup": {
+		"entry": [
+			"src/index.ts"
+		],
+		"format": [
+			"esm",
+			"cjs"
+		],
+		"dts": {
+			"resolve": true
+		},
+		"splitting": true,
+		"clean": true
+	}
 }

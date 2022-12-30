@@ -1,4 +1,4 @@
-import ts, { NewLineKind } from 'typescript'
+import ts from 'typescript'
 import { printNode } from '../src'
 
-export const printNodeTest = (node: ts.Node) => printNode(node, { newLine: NewLineKind.LineFeed })
+export const printNodeTest = (node: ts.Node) => printNode(node, { newLine: ts.NewLineKind.LineFeed })
