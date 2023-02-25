@@ -10,7 +10,7 @@ specifiers:
   typescript: 4.9.4
   vite: 4.0.3
   vitest: 0.26.2
-  zod: 3.20.2
+  zod: 3.20.6
 
 devDependencies:
   '@sachinraja/eslint-config': 0.2.0_lzzuuodtsqwxnvqeq4g4likcqa
@@ -22,7 +22,7 @@ devDependencies:
   typescript: 4.9.4
   vite: 4.0.3_@types+node@18.11.18
   vitest: 0.26.2
-  zod: 3.20.2
+  zod: 3.20.6
 
 packages:
 
@@ -2449,6 +2449,6 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /zod/3.20.2:
-    resolution: {integrity: sha512-1MzNQdAvO+54H+EaK5YpyEy0T+Ejo/7YLHS93G3RnYWh5gaotGHwGeN/ZO687qEDU2y4CdStQYXVHIgrUl5UVQ==}
+  /zod/3.20.6:
+    resolution: {integrity: sha512-oyu0m54SGCtzh6EClBVqDDlAYRz4jrVtKwQ7ZnsEmMI9HnzuZFj8QFwAY1M5uniIYACdGvv0PBWPF2kO0aNofA==}
     dev: true

@@ -69,7 +69,7 @@ type User = {
 
 `zodToTs()` and `createTypeAlias()` return a TS AST nodes, so if you want to get the node as a string, you can use the `printNode()` utility.
 
-`zodToTs()`:
+### `zodToTs()`
 
 ```ts
 import { printNode, zodToTs } from 'zod-to-ts'
@@ -93,7 +93,7 @@ result:
 }"
 ```
 
-`createTypeAlias()`:
+### `createTypeAlias()`
 
 ```ts
 import { createTypeAlias, printNode, zodToTs } from 'zod-to-ts'
@@ -116,6 +116,42 @@ result:
     itemId: number
   }[]
 }"
+```
+
+### `zodToTsMultiple`
+
+```ts
+const address = z.object({
+  addressLine1: z.string(),
+  addressLine2: z.string()
+})
+
+const customer = z.object({
+  name: z.string(),
+  age: z.number(),
+  addresses: z.array(address),
+})
+
+const zodtoTsResult = zodToTsMultiple({
+  Customer: customer,
+  Address: address,
+})
+
+const tsSourceText = zodtoTsResult.typeAliases.map(ta => printNode(ta)).join("\n")
+```
+
+result:
+
+```ts
+type Customer = {
+    name: string;
+    age: number;
+    addresses: Address[];
+};
+type Address = {
+    addressLine1: string;
+    addressLine2: string;
+};
 ```
 
 ## Overriding Types

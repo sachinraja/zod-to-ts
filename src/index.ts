@@ -1,5 +1,15 @@
-import ts from 'typescript'
-import { ZodTypeAny } from 'zod'
+import ts, {NodeArray, TypeAliasDeclaration} from 'typescript'
+import {
+	AnyZodObject,
+	z,
+	ZodArray,
+	ZodDiscriminatedUnion,
+	ZodEffects, ZodFunction, ZodIntersection, ZodMap,
+	ZodRecord, ZodSet,
+	ZodTuple,
+	ZodTypeAny,
+	ZodUnion
+} from 'zod'
 import {
 	GetType,
 	GetTypeFunction,
@@ -18,6 +28,8 @@ import {
 	maybeIdentifierToTypeReference,
 	printNode,
 } from './utils'
+import {withGetType} from "./utils";
+import {AnyZodTuple, ZodUnionOptions} from "zod/lib/types";
 
 const { factory: f } = ts
 
@@ -363,6 +375,149 @@ const zodToTsNode = (
 
 	return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
 }
+
+
+const recursiveWithGetType = (zod: z.ZodTypeAny, identifiersByType: Map<z.ZodTypeAny, ts.Identifier>) => {
+
+	if (identifiersByType.has(zod)) {
+		withGetType(zod, () => identifiersByType.get(zod)!)
+	}
+
+	const {typeName} = zod._def;
+	switch (typeName) {
+		case 'ZodEnum':
+		case 'ZodNativeEnum':
+		case 'ZodString':
+		case 'ZodNumber':
+		case 'ZodBigInt':
+		case 'ZodBoolean':
+		case 'ZodDate':
+		case 'ZodUndefined':
+		case 'ZodNull':
+		case 'ZodVoid':
+		case 'ZodAny':
+		case 'ZodUnknown':
+		case 'ZodNever':
+		case 'ZodLiteral': {
+			// Nothing to do for above
+			break;
+		}
+		case 'ZodLazy': {
+			break
+		}
+		case 'ZodArray': {
+			recursiveWithGetType((zod as ZodArray<ZodTypeAny>).element, identifiersByType)
+			break;
+		}
+		case 'ZodUnion':{
+			const zdu = zod as ZodUnion<ZodUnionOptions>
+			for (const option of zdu.options) {
+				recursiveWithGetType(option, identifiersByType)
+			}
+			break;
+		}
+		case 'ZodDiscriminatedUnion': {
+			const zdu = zod as ZodDiscriminatedUnion<string, AnyZodObject[]>
+			for (const option of zdu.options) {
+				recursiveWithGetType(option, identifiersByType)
+			}
+			break;
+		}
+		case 'ZodEffects': {
+			recursiveWithGetType((zod as ZodEffects<ZodTypeAny>).innerType(), identifiersByType)
+			break;
+		}
+		case 'ZodTuple': {
+			const zodTuple = zod as ZodTuple
+			for (const item of zodTuple.items) {
+				recursiveWithGetType(item, identifiersByType)
+			}
+			break;
+		}
+		case 'ZodRecord': {
+			const zodRecord = zod as ZodRecord
+			recursiveWithGetType(zodRecord.keySchema, identifiersByType)
+			recursiveWithGetType(zodRecord.valueSchema, identifiersByType)
+			break
+		}
+		case 'ZodMap':{
+			const zodMap = zod as ZodMap
+			recursiveWithGetType(zodMap._def.keyType, identifiersByType)
+			recursiveWithGetType(zodMap._def.valueType, identifiersByType)
+			break
+		}
+		case 'ZodSet': {
+			recursiveWithGetType((zod as ZodSet)._def.valueType, identifiersByType)
+			break
+		}
+		case 'ZodIntersection': {
+			const intersection = zod as ZodIntersection<ZodTypeAny, ZodTypeAny>
+			recursiveWithGetType(intersection._def.left, identifiersByType)
+			recursiveWithGetType(intersection._def.right, identifiersByType)
+			break
+		}
+		case 'ZodBranded':
+		case 'ZodNullable':
+		case 'ZodOptional':
+		case 'ZodDefault':
+		case 'ZodPromise': {
+			if ('unwrap' in zod && typeof zod.unwrap === 'function') {
+				recursiveWithGetType(zod.unwrap(), identifiersByType)
+			}
+			break;
+		}
+		case 'ZodFunction': {
+			const zodFunction = (zod as ZodFunction<AnyZodTuple, ZodTypeAny>)
+			recursiveWithGetType(zodFunction.parameters(), identifiersByType)
+			recursiveWithGetType(zodFunction.returnType(), identifiersByType)
+			break;
+		}
+		case 'ZodObject': {
+			const properties = Object.entries((zod as AnyZodObject).shape)
+			for (const [_key, value] of properties) {
+				if (value instanceof z.ZodType) {
+					recursiveWithGetType(value, identifiersByType)
+				}
+			}
+			break;
+		}
+	}
+}
+
+export const zodToTsMultiple = (objectGraph: {[identifier: string]: z.ZodTypeAny}, options?: ZodToTsOptions): {
+	typeAliases: NodeArray<TypeAliasDeclaration>
+	store: ZodToTsStore
+} => {
+	const typesByIdentifier = new Map(Object.entries(objectGraph).map(([key, value]) => [f.createIdentifier(key), value]))
+	const identifiersByType = new Map<z.ZodTypeAny, ts.Identifier>([...typesByIdentifier.entries()].map(([key, value]) => ([value, key])))
+
+	// traverse object graph, find references, wrap them with `withGetType`
+	const zodTypes = [...typesByIdentifier.values()]
+	for (const zodType of zodTypes) {
+		recursiveWithGetType(zodType, identifiersByType)
+	}
+
+	const results = [...typesByIdentifier.entries()].map(([identifier, zodType]) => {
+		// Must not print alias for root level types, otherwise all we will print is aliases
+		// Clone the object and remove any getType function
+		const clone: ZodTypeAny & {getType?: GetTypeFunction} = Object.assign(Object.create(Object.getPrototypeOf(zodType)), zodType)
+		delete clone['getType']
+		const {node, store} = zodToTs(clone, undefined, options)
+		const typeAlias = f.createTypeAliasDeclaration(undefined, identifier, undefined, node)
+		return {typeAlias, store}
+	})
+
+
+	return {
+		typeAliases: f.createNodeArray(results.map(result => result.typeAlias)),
+		store: {
+			// eslint-disable-next-line unicorn/no-array-reduce
+			nativeEnums: results.map(result => result.store.nativeEnums).reduce((previous, current) => [...previous, ...current])
+		}
+	}
+}
+
+
 
 export { createTypeAlias, printNode }
 export { withGetType } from './utils'
