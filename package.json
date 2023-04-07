@@ -41,7 +41,7 @@
 		"example": "tsx test/example.ts"
 	},
 	"peerDependencies": {
-		"typescript": "^4.9.4",
+		"typescript": "^4.9.4 || ^5.0.2",
 		"zod": "^3"
 	},
 	"devDependencies": {
@@ -52,7 +52,7 @@
 		"npm-run-all": "4.1.5",
 		"tsup": "6.7.0",
 		"tsx": "3.12.6",
-		"typescript": "4.9.4",
+		"typescript": "5.0.3",
 		"vite": "4.2.1",
 		"vitest": "0.29.8",
 		"zod": "3.21.4"
