@@ -27,7 +27,7 @@ const callGetType = (
 	let type: ReturnType<GetTypeFunction> | undefined
 
 	// this must be called before accessing 'type'
-	if (zod.getType) type = zod.getType(ts, identifier, options)
+	if (zod._def.getType) type = zod._def.getType(ts, identifier, options)
 	return type
 }
 

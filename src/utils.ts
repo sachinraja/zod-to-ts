@@ -38,7 +38,7 @@ export const printNode = (node: ts.Node, printerOptions?: ts.PrinterOptions) => 
 }
 
 export const withGetType = <T extends ZodTypeAny & GetType>(schema: T, getType: GetTypeFunction): T => {
-	schema.getType = getType
+	schema._def.getType = getType
 	return schema
 }
 

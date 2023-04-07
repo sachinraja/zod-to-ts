@@ -23,4 +23,4 @@ export type GetTypeFunction = (
 	options: RequiredZodToTsOptions,
 ) => ts.Identifier | ts.TypeNode
 
-export type GetType = { getType?: GetTypeFunction }
+export type GetType = { _def: { getType?: GetTypeFunction } }
