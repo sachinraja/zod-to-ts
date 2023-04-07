@@ -20,7 +20,7 @@ const ObjectWithOptionals = z.object({
 	]).optional(),
 })
 
-describe.only('z.optional()', () => {
+describe('z.optional()', () => {
 	it('outputs correct typescript', () => {
 		const { node } = zodToTs(OptionalStringSchema)
 		expect(printNodeTest(node)).toMatchInlineSnapshot('"string | undefined"')

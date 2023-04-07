@@ -358,7 +358,7 @@ result:
 Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
 
 ```ts
-const TreeTSType = zodToTs(TreeSchema, { resolveNativeEnums: true })
+const TreeTSType = zodToTs(TreeSchema, undefined, { resolveNativeEnums: true })
 ```
 
 result:
