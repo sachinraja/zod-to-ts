@@ -10,7 +10,7 @@ it('prints correct typescript', () => {
 	const { node } = zodToTs(schema, 'Function')
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(
-		'"(args_0: (string | undefined) | null, args_1: boolean, args_2: boolean, ...args_3: unknown[]) => string"',
+		'"(args_0: (string | null), args_1: boolean, args_2: boolean, ...args_3: unknown[]) => string"',
 	)
 })
 
