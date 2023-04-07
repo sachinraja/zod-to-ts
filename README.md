@@ -18,12 +18,12 @@ import { zodToTs } from 'zod-to-ts'
 
 // define your Zod schema
 const UserSchema = z.object({
-  username: z.string(),
-  age: z.number(),
-  inventory: z.object({
-    name: z.string(),
-    itemId: z.number(),
-  }).array(),
+	username: z.string(),
+	age: z.number(),
+	inventory: z.object({
+		name: z.string(),
+		itemId: z.number(),
+	}).array(),
 })
 
 // pass schema and name of type/identifier
@@ -52,10 +52,10 @@ import { createTypeAlias, zodToTs } from 'zod-to-ts'
 const identifier = 'User'
 const { node } = zodToTs(UserSchema, identifier)
 const typeAlias = createTypeAlias(
-  node,
-  identifier,
-  // optionally pass a comment
-  // comment: UserSchema.description
+	node,
+	identifier,
+	// optionally pass a comment
+	// comment: UserSchema.description
 )
 ```
 
@@ -63,7 +63,7 @@ result:
 
 ```ts
 type User = {
-  username: string
+	username: string
 }
 ```
 
@@ -127,13 +127,13 @@ import { z } from 'zod'
 import { withGetType, zodToTs } from 'zod-to-ts'
 
 const DateSchema = withGetType(
-  z.instanceof(Date),
-  (ts) => ts.factory.createIdentifier('Date'),
+	z.instanceof(Date),
+	(ts) => ts.factory.createIdentifier('Date'),
 )
 
 const ItemSchema = z.object({
-  name: z.string(),
-  date: DateSchema,
+	name: z.string(),
+	date: DateSchema,
 })
 
 const { node } = zodToTs(ItemSchema, 'Item')
@@ -143,8 +143,8 @@ result without `withGetType` override:
 
 ```ts
 type Item = {
-  name: string
-  date: any
+	name: string
+	date: any
 }
 ```
 
@@ -152,8 +152,8 @@ result with override:
 
 ```ts
 type Item = {
-  name: string
-  date: Date
+	name: string
+	date: Date
 }
 ```
 
@@ -170,13 +170,13 @@ Lazy types default to referencing the root type (`User` in the following example
 // so you must define it
 import { z } from 'zod'
 type User = {
-  username: string
-  friends: User[]
+	username: string
+	friends: User[]
 }
 
 const UserSchema: z.ZodSchema<User> = z.object({
-  username: z.string(),
-  friends: z.lazy(() => UserSchema).array(),
+	username: z.string(),
+	friends: z.lazy(() => UserSchema).array(),
 })
 
 const { node } = zodToTs(UserSchema, 'User')
@@ -186,8 +186,8 @@ result:
 
 ```ts
 type User = {
-  username: string
-  friends: User[]
+	username: string
+	friends: User[]
 }
 ```
 
@@ -195,12 +195,12 @@ But what happens when the schema looks like this?
 
 ```ts
 type User = {
-  username: string
-  item: {
-    name: string
-    itemId: string
-  }
-  friends: User[]
+	username: string
+	item: {
+		name: string
+		itemId: string
+	}
+	friends: User[]
 }
 
 // essentially when you are referencing a different field
@@ -208,12 +208,12 @@ type User = {
 const friendItems = z.lazy(() => UserSchema.item).array()
 
 const UserSchema: z.ZodSchema<User> = z.object({
-  username: z.string(),
-  item: z.object({
-    name: z.string(),
-    id: z.number(),
-  }),
-  friendItems,
+	username: z.string(),
+	item: z.object({
+		name: z.string(),
+		id: z.number(),
+	}),
+	friendItems,
 })
 
 const { node } = zodToTs(UserSchema, 'User')
@@ -239,34 +239,34 @@ result:
 import { z } from 'zod'
 import { withGetType } from 'zod-to-ts'
 type User = {
-  username: string
-  item: {
-    name: string
-    id: number
-  }
-  friends: User[]
+	username: string
+	item: {
+		name: string
+		id: number
+	}
+	friends: User[]
 }
 
 const friendItems: z.Schema<User['item'][]> = withGetType(
-  z.lazy(() => UserSchema.item).array(),
-  // return a TS AST node
-  (ts, identifier) =>
-    ts.factory.createIndexedAccessTypeNode(
-      ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier(identifier),
-        undefined,
-      ),
-      ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('item')),
-    ),
+	z.lazy(() => UserSchema.item).array(),
+	// return a TS AST node
+	(ts, identifier) =>
+		ts.factory.createIndexedAccessTypeNode(
+			ts.factory.createTypeReferenceNode(
+				ts.factory.createIdentifier(identifier),
+				undefined,
+			),
+			ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('item')),
+		),
 )
 
 const UserSchema: z.ZodSchema<User> = z.object({
-  username: z.string(),
-  item: z.object({
-    name: z.string(),
-    id: z.number(),
-  }),
-  friendItems,
+	username: z.string(),
+	item: z.object({
+		name: z.string(),
+		id: z.number(),
+	}),
+	friendItems,
 })
 
 const { node } = zodToTs(UserSchema, 'User')
@@ -326,21 +326,21 @@ import { z } from 'zod'
 import { withGetType, zodToTs } from 'zod-to-ts'
 
 enum Fruit {
-  Apple = 'apple',
-  Banana = 'banana',
-  Cantaloupe = 'cantaloupe',
+	Apple = 'apple',
+	Banana = 'banana',
+	Cantaloupe = 'cantaloupe',
 }
 
 const fruitNativeEnum = withGetType(
-  z.nativeEnum(
-    Fruit,
-  ),
-  // return an identifier that will be used on the enum type
-  (ts) => ts.factory.createIdentifier('Fruit'),
+	z.nativeEnum(
+		Fruit,
+	),
+	// return an identifier that will be used on the enum type
+	(ts) => ts.factory.createIdentifier('Fruit'),
 )
 
 const TreeSchema = z.object({
-  fruit: fruitNativeEnum,
+	fruit: fruitNativeEnum,
 })
 
 const { node } = zodToTs(TreeSchema)

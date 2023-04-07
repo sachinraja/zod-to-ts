@@ -15,7 +15,6 @@ import {
 	createUnknownKeywordNode,
 	getIdentifierOrStringLiteral,
 	maybeIdentifierToTypeReference,
-	printNode,
 } from './utils'
 
 const { factory: f, SyntaxKind } = ts
