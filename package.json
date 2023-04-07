@@ -46,15 +46,15 @@
 	},
 	"devDependencies": {
 		"@sachinraja/eslint-config": "0.2.0",
-		"@types/node": "18.11.18",
-		"dprint": "0.34.1",
-		"eslint": "8.30.0",
-		"tsup": "6.5.0",
-		"tsx": "3.12.1",
+		"@types/node": "18.15.11",
+		"dprint": "0.35.3",
+		"eslint": "8.37.0",
+		"tsup": "6.7.0",
+		"tsx": "3.12.6",
 		"typescript": "4.9.4",
-		"vite": "4.0.3",
-		"vitest": "0.26.2",
-		"zod": "3.20.2"
+		"vite": "4.2.1",
+		"vitest": "0.29.8",
+		"zod": "3.21.4"
 	},
 	"sideEffects": false,
 	"tsup": {

@@ -1,4 +1,11 @@
 {
 	"root": true,
-	"extends": "@sachinraja"
+	"extends": "@sachinraja",
+	"rules": {
+		"unicorn/prevent-abbreviations": ["error", {
+			"allowList": {
+				"addJsDocComment": true
+			}
+		}]
+	}
 }
