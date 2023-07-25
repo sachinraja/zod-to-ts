@@ -22,7 +22,7 @@ const pickedSchema = example2.partial()
 const nativeEnum = withGetType(z.nativeEnum(Fruits), (ts, _, options) => {
 	const identifier = ts.factory.createIdentifier('Fruits')
 
-	if (options.resolveNativeEnums) return identifier
+	if (options.nativeEnums === 'resolve') return identifier
 
 	return ts.factory.createTypeReferenceNode(
 		identifier,
@@ -103,7 +103,7 @@ type A = z.infer<typeof example>['ee']
 
 type B = z.infer<typeof pickedSchema>
 
-const { node, store } = zodToTs(example, 'Example', { resolveNativeEnums: true })
+const { node, store } = zodToTs(example, 'Example', { nativeEnums: 'resolve' })
 
 console.log(printNode(node))
 

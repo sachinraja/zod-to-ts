@@ -55,7 +55,7 @@ describe('Fruit enum', () => {
 			(ts) => ts.factory.createIdentifier('Fruit'),
 		)
 
-		const { store } = zodToTs(schema, undefined, { resolveNativeEnums: true })
+		const { store } = zodToTs(schema, undefined, { nativeEnums: 'resolve' })
 
 		expect(printNodeTest(store.nativeEnums[0])).toMatchInlineSnapshot(`
 			"enum Fruit {
@@ -79,7 +79,7 @@ it('handles string literal properties', () => {
 		(ts) => ts.factory.createIdentifier('StringLiteral'),
 	)
 
-	const { store } = zodToTs(schema, undefined, { resolveNativeEnums: true })
+	const { store } = zodToTs(schema, undefined, { nativeEnums: 'resolve' })
 
 	expect(printNodeTest(store.nativeEnums[0])).toMatchInlineSnapshot(`
 		"enum StringLiteral {
@@ -91,4 +91,28 @@ it('handles string literal properties', () => {
 		    \\"\\\\\\\\\\\\\\"Escaped\\\\\\\\\\\\\\"\\" = 2
 		}"
 	`)
+})
+
+describe('convertNativeEnumToUnion option', () => {
+	it('handles number enum', () => {
+		enum Color {
+			Red,
+			Green,
+			Blue,
+		}
+		const schema = z.nativeEnum(Color)
+		const { node } = zodToTs(schema, undefined, { nativeEnums: 'union' })
+		expect(printNodeTest(node)).toMatchInlineSnapshot(`"\\"Red\\" | \\"Green\\" | \\"Blue\\" | 0 | 1 | 2"`)
+	})
+
+	it('handles string enum', () => {
+		enum Fruit {
+			Apple = 'apple',
+			Banana = 'banana',
+			Cantaloupe = 'cantaloupe',
+		}
+		const schema = z.nativeEnum(Fruit)
+		const { node } = zodToTs(schema, undefined, { nativeEnums: 'union' })
+		expect(printNodeTest(node)).toMatchInlineSnapshot(`"\\"apple\\" | \\"banana\\" | \\"cantaloupe\\""`)
+	})
 })

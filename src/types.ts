@@ -3,7 +3,9 @@ import ts from 'typescript'
 export type LiteralType = string | number | boolean
 
 export type ZodToTsOptions = {
+	/** @deprecated please use nativeEnums instead */
 	resolveNativeEnums?: boolean
+	nativeEnums?: 'identifier' | 'resolve' | 'union'
 }
 
 export type RequiredZodToTsOptions = Required<ZodToTsOptions>

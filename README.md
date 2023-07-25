@@ -317,7 +317,7 @@ result:
 }
 ```
 
-There are two ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
+There are three ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
 
 Option 1 - providing an identifier using `withGetType()`:
 
@@ -358,7 +358,7 @@ result:
 Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
 
 ```ts
-const TreeTSType = zodToTs(TreeSchema, undefined, { resolveNativeEnums: true })
+const TreeTSType = zodToTs(TreeSchema, undefined, { nativeEnums: 'resolve' })
 ```
 
 result:
@@ -384,3 +384,22 @@ result:
 Note: These are not the actual values, they are TS representation. The actual values are TS AST nodes.
 
 This option allows you to embed the enums before the schema without actually depending on an external enum type.
+
+Option 3 - convert to union. This is the same as how ZodEnum created by z.enum([...]) is handled, but need to pass an option:
+
+```ts
+const { node } = zodToTs(TreeSchema, undefined, {
+	nativeEnums: 'union',
+})
+```
+
+result:
+
+<!-- dprint-ignore -->
+```ts
+{
+  fruit: 'apple' | 'banana' | 'cantaloupe'
+}
+```
+
+Note: These are not the actual values, they are TS representation. The actual values are TS AST nodes.
