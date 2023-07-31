@@ -141,7 +141,7 @@ const zodToTsNode = (
 				const type = zodToTsNode(nextZodNode, ...otherArguments)
 
 				const { typeName: nextZodNodeTypeName } = nextZodNode._def
-				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
+				const isOptional = nextZodNodeTypeName === 'ZodOptional';
 
 				const propertySignature = f.createPropertySignature(
 					undefined,
