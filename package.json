@@ -1,6 +1,6 @@
 {
 	"name": "zod-to-ts",
-	"version": "1.1.4",
+	"version": "1.2.0",
 	"type": "module",
 	"description": "generate TypeScript types from your Zod schema",
 	"repository": {
@@ -71,5 +71,6 @@
 		},
 		"splitting": true,
 		"clean": true
-	}
+	},
+	"packageManager": "pnpm@8.6.12"
 }
