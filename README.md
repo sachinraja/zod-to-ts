@@ -8,8 +8,6 @@ generate TypeScript types from your [Zod](https://github.com/colinhacks/zod) sch
 npm install zod-to-ts zod typescript
 ```
 
-You must be on zod@3 and typescript@4.
-
 ## Usage
 
 ```ts
