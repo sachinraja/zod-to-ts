@@ -13,11 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: pnpm/action-setup@v2.4.0
+      - uses: pnpm/action-setup@v2
 
       - uses: actions/setup-node@v3
         with:
-          node-version: lts
+          node-version: 'lts/*'
           cache: pnpm
 
       - name: Install dependencies
