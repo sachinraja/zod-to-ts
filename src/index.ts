@@ -21,14 +21,15 @@ import {
 const { factory: f, SyntaxKind } = ts
 
 const callGetType = (
-	zod: ZodTypeAny & GetType,
+	zod: ZodTypeAny,
 	identifier: string,
-	options: ZodToTsOptions,
+	options: ResolvedZodToTsOptions,
 ) => {
 	let type: ReturnType<GetTypeFunction> | undefined
 
+	const getTypeSchema = zod as GetType
 	// this must be called before accessing 'type'
-	if (zod._def.getType) type = zod._def.getType(ts, identifier, options)
+	if (getTypeSchema._def.getType) type = getTypeSchema._def.getType(ts, identifier, options)
 	return type
 }
 
