@@ -4,7 +4,8 @@ import {
 	GetType,
 	GetTypeFunction,
 	LiteralType,
-	RequiredZodToTsOptions,
+	ResolvedZodToTsOptions,
+	resolveOptions,
 	ZodToTsOptions,
 	ZodToTsReturn,
 	ZodToTsStore,
@@ -22,18 +23,13 @@ const { factory: f, SyntaxKind } = ts
 const callGetType = (
 	zod: ZodTypeAny & GetType,
 	identifier: string,
-	options: RequiredZodToTsOptions,
+	options: ZodToTsOptions,
 ) => {
 	let type: ReturnType<GetTypeFunction> | undefined
 
 	// this must be called before accessing 'type'
 	if (zod._def.getType) type = zod._def.getType(ts, identifier, options)
 	return type
-}
-
-export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => {
-	const resolved: RequiredZodToTsOptions = { resolveNativeEnums: true }
-	return { ...resolved, ...raw }
 }
 
 export const zodToTs = (
@@ -56,7 +52,7 @@ const zodToTsNode = (
 	zod: ZodTypeAny,
 	identifier: string,
 	store: ZodToTsStore,
-	options: RequiredZodToTsOptions,
+	options: ResolvedZodToTsOptions,
 ) => {
 	const typeName = zod._def.typeName
 
@@ -167,7 +163,7 @@ const zodToTsNode = (
 
 		case 'ZodEnum': {
 			// z.enum['a', 'b', 'c'] -> 'a' | 'b' | 'c
-			const types = zod._def.values.map((value: string) => f.createStringLiteral(value))
+			const types = zod._def.values.map((value: string) => f.createLiteralTypeNode(f.createStringLiteral(value)))
 			return f.createUnionTypeNode(types)
 		}
 
@@ -192,12 +188,26 @@ const zodToTsNode = (
 		}
 
 		case 'ZodNativeEnum': {
+			const type = getTypeType
+
+			if (options.nativeEnums === 'union') {
+				// allow overriding with this option
+				if (type) return maybeIdentifierToTypeReference(type)
+
+				const types = Object.values(zod._def.values).map((value) => {
+					if (typeof value === 'number') {
+						return f.createLiteralTypeNode(f.createNumericLiteral(value))
+					}
+					return f.createLiteralTypeNode(f.createStringLiteral(value as string))
+				})
+				return f.createUnionTypeNode(types)
+			}
+
 			// z.nativeEnum(Fruits) -> Fruits
 			// can resolve Fruits into store and user can handle enums
-			let type = getTypeType
 			if (!type) return createUnknownKeywordNode()
 
-			if (options.resolveNativeEnums) {
+			if (options.nativeEnums === 'resolve') {
 				const enumMembers = Object.entries(zod._def.values as Record<string, string | number>).map(([key, value]) => {
 					const literal = typeof value === 'number'
 						? f.createNumericLiteral(value)
@@ -218,13 +228,11 @@ const zodToTsNode = (
 						),
 					)
 				} else {
-					throw new Error('getType on nativeEnum must return an identifier when resolveNativeEnums is set')
+					throw new Error('getType on nativeEnum must return an identifier when nativeEnums is "resolve"')
 				}
 			}
 
-			type = maybeIdentifierToTypeReference(type)
-
-			return type
+			return maybeIdentifierToTypeReference(type)
 		}
 
 		case 'ZodOptional': {

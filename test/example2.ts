@@ -12,7 +12,7 @@ const schema = z.object({
 	key: Enum.describe('Comment for key'),
 })
 
-const { node } = zodToTs(schema, undefined, { resolveNativeEnums: true })
+const { node } = zodToTs(schema, undefined, { nativeEnums: 'resolve' })
 console.log(printNode(node))
 // {
 //     /** Comment for key */
