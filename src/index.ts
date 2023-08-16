@@ -1,6 +1,15 @@
 import ts from 'typescript'
 import { ZodTypeAny } from 'zod'
-import { GetType, GetTypeFunction, LiteralType, ZodToTsOptions, ZodToTsReturn, ZodToTsStore } from './types'
+import {
+	GetType,
+	GetTypeFunction,
+	LiteralType,
+	ResolvedZodToTsOptions,
+	resolveOptions,
+	ZodToTsOptions,
+	ZodToTsReturn,
+	ZodToTsStore,
+} from './types'
 import {
 	addJsDocComment,
 	createTypeReferenceFromString,
@@ -22,16 +31,6 @@ const callGetType = (
 	if (zod._def.getType) type = zod._def.getType(ts, identifier, options)
 	return type
 }
-
-export const resolveOptions = (raw?: ZodToTsOptions) => {
-	const resolved = {
-		nativeEnums: raw?.resolveNativeEnums ? 'resolve' : 'identifier',
-	} satisfies ZodToTsOptions
-
-	return { ...resolved, ...raw }
-}
-
-type ResolvedZodToTsOptions = ReturnType<typeof resolveOptions>
 
 export const zodToTs = (
 	zod: ZodTypeAny,
