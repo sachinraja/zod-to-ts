@@ -8,8 +8,6 @@ export type ZodToTsOptions = {
 	nativeEnums?: 'identifier' | 'resolve' | 'union'
 }
 
-export type RequiredZodToTsOptions = Required<ZodToTsOptions>
-
 export type ZodToTsStore = {
 	nativeEnums: ts.EnumDeclaration[]
 }
@@ -22,7 +20,7 @@ export type ZodToTsReturn = {
 export type GetTypeFunction = (
 	typescript: typeof ts,
 	identifier: string,
-	options: RequiredZodToTsOptions,
+	options: ZodToTsOptions,
 ) => ts.Identifier | ts.TypeNode
 
 export type GetType = { _def: { getType?: GetTypeFunction } }

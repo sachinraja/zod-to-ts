@@ -1,14 +1,6 @@
 import ts from 'typescript'
 import { ZodTypeAny } from 'zod'
-import {
-	GetType,
-	GetTypeFunction,
-	LiteralType,
-	RequiredZodToTsOptions,
-	ZodToTsOptions,
-	ZodToTsReturn,
-	ZodToTsStore,
-} from './types'
+import { GetType, GetTypeFunction, LiteralType, ZodToTsOptions, ZodToTsReturn, ZodToTsStore } from './types'
 import {
 	addJsDocComment,
 	createTypeReferenceFromString,
@@ -22,7 +14,7 @@ const { factory: f, SyntaxKind } = ts
 const callGetType = (
 	zod: ZodTypeAny & GetType,
 	identifier: string,
-	options: RequiredZodToTsOptions,
+	options: ZodToTsOptions,
 ) => {
 	let type: ReturnType<GetTypeFunction> | undefined
 
@@ -31,13 +23,15 @@ const callGetType = (
 	return type
 }
 
-export const resolveOptions = (raw?: ZodToTsOptions): RequiredZodToTsOptions => {
-	const resolved: RequiredZodToTsOptions = {
-		resolveNativeEnums: false,
+export const resolveOptions = (raw?: ZodToTsOptions) => {
+	const resolved = {
 		nativeEnums: raw?.resolveNativeEnums ? 'resolve' : 'identifier',
-	}
+	} satisfies ZodToTsOptions
+
 	return { ...resolved, ...raw }
 }
+
+type ResolvedZodToTsOptions = ReturnType<typeof resolveOptions>
 
 export const zodToTs = (
 	zod: ZodTypeAny,
@@ -59,7 +53,7 @@ const zodToTsNode = (
 	zod: ZodTypeAny,
 	identifier: string,
 	store: ZodToTsStore,
-	options: RequiredZodToTsOptions,
+	options: ResolvedZodToTsOptions,
 ) => {
 	const typeName = zod._def.typeName
 
@@ -195,7 +189,12 @@ const zodToTsNode = (
 		}
 
 		case 'ZodNativeEnum': {
+			const type = getTypeType
+
 			if (options.nativeEnums === 'union') {
+				// allow overriding with this option
+				if (type) return maybeIdentifierToTypeReference(type)
+
 				const types = Object.values(zod._def.values).map((value) => {
 					if (typeof value === 'number') {
 						return f.createLiteralTypeNode(f.createNumericLiteral(value))
@@ -207,7 +206,6 @@ const zodToTsNode = (
 
 			// z.nativeEnum(Fruits) -> Fruits
 			// can resolve Fruits into store and user can handle enums
-			let type = getTypeType
 			if (!type) return createUnknownKeywordNode()
 
 			if (options.nativeEnums === 'resolve') {
@@ -231,13 +229,11 @@ const zodToTsNode = (
 						),
 					)
 				} else {
-					throw new Error('getType on nativeEnum must return an identifier when nativeEnums is "resolve')
+					throw new Error('getType on nativeEnum must return an identifier when nativeEnums is "resolve"')
 				}
 			}
 
-			type = maybeIdentifierToTypeReference(type)
-
-			return type
+			return maybeIdentifierToTypeReference(type)
 		}
 
 		case 'ZodOptional': {
