@@ -45,17 +45,17 @@
 		"zod": "^3"
 	},
 	"devDependencies": {
-		"@sachinraja/eslint-config": "0.2.0",
-		"@types/node": "18.15.11",
-		"dprint": "0.35.3",
-		"eslint": "8.37.0",
+		"@sachinraja/eslint-config": "0.3.0",
+		"@types/node": "20.5.0",
+		"dprint": "0.40.2",
+		"eslint": "8.47.0",
 		"npm-run-all": "4.1.5",
-		"tsup": "6.7.0",
-		"tsx": "3.12.6",
-		"typescript": "5.0.3",
-		"vite": "4.2.1",
-		"vitest": "0.29.8",
-		"zod": "3.21.4"
+		"tsup": "7.2.0",
+		"tsx": "3.12.7",
+		"typescript": "5.1.6",
+		"vite": "4.4.9",
+		"vitest": "0.34.1",
+		"zod": "3.22.1"
 	},
 	"sideEffects": false,
 	"tsup": {
