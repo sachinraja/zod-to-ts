@@ -72,5 +72,5 @@
 		"splitting": true,
 		"clean": true
 	},
-	"packageManager": "pnpm@8.14.3"
+	"packageManager": "pnpm@8.15.0"
 }
