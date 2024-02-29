@@ -6,6 +6,8 @@ export type ZodToTsOptions = {
 	/** @deprecated use `nativeEnums` instead */
 	resolveNativeEnums?: boolean
 	nativeEnums?: 'identifier' | 'resolve' | 'union'
+	readonlyObjectProperties?: boolean
+	readonlyArrays?: boolean
 }
 
 export const resolveOptions = (raw?: ZodToTsOptions) => {
