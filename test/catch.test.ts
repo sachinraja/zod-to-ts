@@ -4,8 +4,8 @@ import { zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 const ListSchema = z.object({
-  // eslint-disable-next-line unicorn/prefer-top-level-await
-	items: z.enum(['a', 'b', 'c']).catch("a") 
+	// eslint-disable-next-line unicorn/prefer-top-level-await
+	items: z.enum(['a', 'b', 'c']).catch('a'),
 }).array()
 
 describe('z.catch()', () => {
