@@ -138,7 +138,7 @@ const zodToTsNode = (
 				const type = zodToTsNode(nextZodNode, ...otherArguments)
 
 				const { typeName: nextZodNodeTypeName } = nextZodNode._def
-				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
+				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional() && nextZodNodeTypeName !== 'ZodCatch'
 
 				const propertySignature = f.createPropertySignature(
 					undefined,
@@ -374,6 +374,12 @@ const zodToTsNode = (
 			// @ts-expect-error needed to set children
 			type.types = filteredNodes
 
+			return type
+		}
+
+		case 'ZodCatch': {
+			// z.enum(['a', 'b', 'c']).catch('a') -> 'a' | 'b' | 'c'
+			const type = zodToTsNode(zod._def.innerType, ...otherArguments) as ts.TypeNode
 			return type
 		}
 	}
