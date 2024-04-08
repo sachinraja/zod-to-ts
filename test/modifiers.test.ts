@@ -31,7 +31,7 @@ describe('z.optional()', () => {
 
 		expect(printNodeTest(node)).toMatchInlineSnapshot(`
 			"{
-			    optional?: string | undefined;
+			    optional?: string;
 			    required: string;
 			    transform?: number | undefined;
 			    or?: (number | undefined) | string;
@@ -39,10 +39,10 @@ describe('z.optional()', () => {
 			        string | undefined,
 			        number,
 			        {
-			            optional?: string | undefined;
+			            optional?: string;
 			            required: string;
 			        }
-			    ] | undefined;
+			    ];
 			}"
 		`)
 	})
