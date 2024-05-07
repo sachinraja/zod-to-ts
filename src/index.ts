@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import { ZodTypeAny } from 'zod'
+import { AnyZodObject, ZodDefault, ZodString, ZodTypeAny } from 'zod'
 import {
 	GetType,
 	GetTypeFunction,
@@ -138,7 +138,8 @@ const zodToTsNode = (
 				const type = zodToTsNode(nextZodNode, ...otherArguments)
 
 				const { typeName: nextZodNodeTypeName } = nextZodNode._def
-				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
+				const isOptional = nextZodNodeTypeName === 'ZodOptional'
+					|| (nextZodNode.isOptional() && nextZodNodeTypeName !== 'ZodCatch')
 
 				const propertySignature = f.createPropertySignature(
 					undefined,
@@ -147,8 +148,21 @@ const zodToTsNode = (
 					type,
 				)
 
+				let descriptionParts: string[] = []
+
 				if (nextZodNode.description) {
-					addJsDocComment(propertySignature, nextZodNode.description)
+					descriptionParts.push(nextZodNode.description)
+				}
+
+				if (nextZodNode instanceof ZodDefault) {
+					const data = nextZodNode._def.defaultValue()
+					const stringifiedData = JSON.stringify(data)
+					descriptionParts.push(`@default ${stringifiedData}`)
+				}
+
+				if (descriptionParts.length > 0) {
+					const suffix = descriptionParts.length > 1 ? '\n' : ''
+					addJsDocComment(propertySignature, descriptionParts.join('\n * ') + suffix)
 				}
 
 				return propertySignature
@@ -374,6 +388,12 @@ const zodToTsNode = (
 			// @ts-expect-error needed to set children
 			type.types = filteredNodes
 
+			return type
+		}
+
+		case 'ZodCatch': {
+			// z.enum(['a', 'b', 'c']).catch('a') -> 'a' | 'b' | 'c'
+			const type = zodToTsNode(zod._def.innerType, ...otherArguments) as ts.TypeNode
 			return type
 		}
 	}
