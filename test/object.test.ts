@@ -85,3 +85,17 @@ it('supports zod.describe()', () => {
 		}"
 	`)
 })
+
+it('readonlyArrays option outputs correct typescript', () => {
+	const schema = z.object({
+		id: z.number(),
+		value: z.string(),
+	})
+	const { node: readonlyNode } = zodToTs(schema, undefined, { readonlyObjectProperties: true })
+	expect(printNodeTest(readonlyNode)).toMatchInlineSnapshot(`
+		"{
+		    readonly id: number;
+		    readonly value: string;
+		}"
+	`)
+})
