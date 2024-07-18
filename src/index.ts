@@ -141,7 +141,7 @@ const zodToTsNode = (
 				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
 
 				const propertySignature = f.createPropertySignature(
-					undefined,
+					options.readonlyObjectProperties ? [f.createToken(SyntaxKind.ReadonlyKeyword)] : [],
 					getIdentifierOrStringLiteral(key),
 					isOptional ? f.createToken(SyntaxKind.QuestionToken) : undefined,
 					type,
@@ -159,6 +159,13 @@ const zodToTsNode = (
 		case 'ZodArray': {
 			const type = zodToTsNode(zod._def.type, ...otherArguments)
 			const node = f.createArrayTypeNode(type)
+			if (options.readonlyArrays) {
+				const readonlyNode = f.createTypeOperatorNode(
+					SyntaxKind.ReadonlyKeyword,
+					node,
+				)
+				return readonlyNode
+			}
 			return node
 		}
 

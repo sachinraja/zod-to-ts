@@ -19,4 +19,15 @@ describe('z.array()', () => {
 			}[]"
 		`)
 	})
+
+	const { node: readonlyNode } = zodToTs(ItemsSchema, 'User', { readonlyArrays: true })
+
+	it('readonlyArrays option outputs correct typescript', () => {
+		expect(printNodeTest(readonlyNode)).toMatchInlineSnapshot(`
+			"readonly {
+			    id: number;
+			    value: string;
+			}[]"
+		`)
+	})
 })
