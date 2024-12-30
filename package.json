@@ -2,6 +2,7 @@
 	"name": "zod-to-ts",
 	"version": "1.2.0",
 	"type": "module",
+	"license": "MIT",
 	"description": "generate TypeScript types from your Zod schema",
 	"repository": {
 		"type": "git",
