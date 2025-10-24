@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { zodToTs } from '../src'
+import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 const ShapeSchema = z.discriminatedUnion('kind', [
@@ -10,18 +10,19 @@ const ShapeSchema = z.discriminatedUnion('kind', [
 ])
 
 describe('z.discriminatedUnion()', () => {
-	const { node } = zodToTs(ShapeSchema, 'Shape')
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(ShapeSchema, { auxiliaryTypeStore })
 
 	it('outputs correct typescript', () => {
 		expect(printNodeTest(node)).toMatchInlineSnapshot(`
 			"{
-			    kind: \\"circle\\";
+			    kind: "circle";
 			    radius: number;
 			} | {
-			    kind: \\"square\\";
+			    kind: "square";
 			    x: number;
 			} | {
-			    kind: \\"triangle\\";
+			    kind: "triangle";
 			    x: number;
 			    y: number;
 			}"

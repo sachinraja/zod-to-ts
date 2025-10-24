@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { zodToTs } from '../src'
+import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 const PrimitiveSchema = z.object({
@@ -17,7 +17,8 @@ const PrimitiveSchema = z.object({
 })
 
 describe('PrimitiveSchema', () => {
-	const { node } = zodToTs(PrimitiveSchema, 'User')
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(PrimitiveSchema, { auxiliaryTypeStore })
 
 	it('outputs correct typescript', () => {
 		expect(printNodeTest(node)).toMatchInlineSnapshot(`
@@ -28,9 +29,9 @@ describe('PrimitiveSchema', () => {
 			    createdAt: Date;
 			    undef?: undefined;
 			    nu: null;
-			    vo?: void | undefined;
-			    an?: any;
-			    unknow?: unknown;
+			    vo: void | undefined;
+			    an: any;
+			    unknow: unknown;
 			    nev: never;
 			}"
 		`)

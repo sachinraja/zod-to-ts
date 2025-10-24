@@ -1,27 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { z } from 'zod'
-import { withGetType, zodToTs } from '../src'
+import { z } from 'zod/v4'
+import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 describe('z.describe()', () => {
-	it('supports describing schema after withGetType', () => {
-		const Enum = z.nativeEnum({
-			ONE: 1,
-			TWO: 2,
-		})
-
-		withGetType(Enum, ts => ts.factory.createIdentifier('Enum'))
+	it('supports describing schema', () => {
+		const keySchema = z.string()
 
 		const schema = z.object({
-			key: Enum.describe('Comment for key'),
+			key: keySchema.describe('Comment for key'),
 		})
 
-		const { node } = zodToTs(schema)
+		const auxiliaryTypeStore = createAuxiliaryTypeStore()
+		const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 		expect(printNodeTest(node)).toMatchInlineSnapshot(`
 			"{
 			    /** Comment for key */
-			    key: Enum;
+			    key: string;
 			}"
 		`)
 	})

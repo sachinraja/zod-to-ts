@@ -1,20 +1,21 @@
 # zod-to-ts
 
-generate TypeScript types from your [Zod](https://github.com/colinhacks/zod) schema
+Generate TypeScript types from your [Zod](https://github.com/colinhacks/zod) schema.
 
 ## Installation
 
 ```
-npm install zod-to-ts zod typescript
+npm install zod-to-ts
 ```
+
+This package has peer dependencies of zod@4 and typescript@5.
 
 ## Usage
 
 ```ts
 import { z } from 'zod'
-import { zodToTs } from 'zod-to-ts'
+import { zodToTs, createAuxiliaryTypeStore } from 'zod-to-ts'
 
-// define your Zod schema
 const UserSchema = z.object({
 	username: z.string(),
 	age: z.number(),
@@ -24,109 +25,202 @@ const UserSchema = z.object({
 	}).array(),
 })
 
-// pass schema and name of type/identifier
-const { node } = zodToTs(UserSchema, 'User')
+const auxiliaryTypeStore = createAuxiliaryTypeStore()
+const { node } = zodToTs(UserSchema, { auxiliaryTypeStore })
 ```
 
-result:
-
-<!-- dprint-ignore -->
+`node`
 ```ts
 {
-  username: string
-  age: number
-  inventory: {
-    name: string
-    itemId: number
-  }[]
+    username: string;
+    age: number;
+    inventory: {
+        name: string;
+        itemId: number;
+    }[];
 }
 ```
 
-You must pass in the identifier `User` or it will default to `Identifier`. This is necessary to handle cases like recursive types and native enums. `zodToTs()` only returns the type value, not the actual type declaration. If you want to add an identifier to the type and create a type declaration, you can use the `createTypeAlias()` utility:
+`node` is a TypeScript AST node that represents the TypeScript type corresponding to the input Zod schema.
+
+`zodToTs` only returns the type node, not the actual type declaration. If you want to create a type declaration, you can use the `createTypeAlias` utility.
 
 ```ts
 import { createTypeAlias, zodToTs } from 'zod-to-ts'
 
-const identifier = 'User'
-const { node } = zodToTs(UserSchema, identifier)
-const typeAlias = createTypeAlias(
-	node,
-	identifier,
-	// optionally pass a comment
-	// comment: UserSchema.description
-)
+const typeAlias = createTypeAlias(node, 'User')
 ```
 
-result:
+`node`
 
 ```ts
 type User = {
-	username: string
+    username: string;
+    age: number;
+    inventory: {
+        name: string;
+        itemId: number;
+    }[];
+};
+```
+
+If you want to get the node as a string, you can use the `printNode` utility.
+
+```ts
+import { printNode } from 'zod-to-ts'
+
+const nodeString = printNode(node)
+console.log(nodeString)
+```
+
+You can also use it with `createTypeAlias`.
+
+```ts
+import { createTypeAlias, printNode } from 'zod-to-ts'
+
+const typeAlias = createTypeAlias(node, 'User')
+const nodeString = printNode(typeAlias)
+console.log(nodeString)
+```
+
+## Configuration
+You can pass options in the second argument to `zodToTs`.
+```ts
+zodToTs(schema, {
+	...
+})
+```
+
+### `metadataRegistry`
+Metadata for schemas is currently only used for comments for nodes. If a schema has a `description` field associated with it then a JSDoc comment with the description is added for that schema. This is set to the [global registry](https://zod.dev/metadata#zglobalregistry) by default.
+
+### `unrepresentable`
+The following APIs are not representable in `zod-to-ts`. They cannot accurately be represented as TypeScript types as they cannot be statically analyzed. By default an error will be thrown if they are encountered, but if `unrepresentable` is set to `'any'` then the type will be set to `any` for these APIs.
+
+```ts
+z.transform() // ❌
+z.custom(); // ❌
+```
+
+### `io`
+This changes whether to extract the schema's input or output type as these can be different when APIs such as `.pipe()` are used. It can be set to `'input'` or `'output'`, `'output'` is the default.
+
+
+## Auxiliary Types
+
+By now you might be wondering what `auxiliaryTypeStore` actually does and rightfully so. Due to recursion, it's impossible to represent every type with just a single type declaration. Some may require auxiliary/helper types alongside the main type node for correctness.
+
+```ts
+import { z } from 'zod'
+import { createAuxiliaryTypeStore, zodToTs } from 'zod-to-ts'
+
+const Category = z.object({
+  name: z.string(),
+  get subcategories(){
+    return z.array(Category)
+  }
+})
+
+const auxiliaryTypeStore = createAuxiliaryTypeStore()
+const { node } = zodToTs(Category, { auxiliaryTypeStore })
+```
+
+`node`
+
+```ts
+Auxiliary_0
+```
+
+Wait what happened to the types for the node? Why is it just a type reference? Let's examine the `auxiliaryTypeStore` map.
+
+```ts
+{
+	identifier: `Auxiliary_0`,
+	node: `type Auxiliary_0 = {
+		name: string,
+		subcategories: Auxiliary_0,
+	}`
 }
 ```
+In this example, \` is used to denote a TS AST node, not a string. So this is where our types went! An auxiliary type had to be created to properly reflect the recursion.
 
-`zodToTs()` and `createTypeAlias()` return a TS AST nodes, so if you want to get the node as a string, you can use the `printNode()` utility.
+To extract all the auxiliary types from the store you can use the following code.
+```ts
+const auxiliaryTypeStore = createAuxiliaryTypeStore()
+const { node } = zodToTs(Category, { auxiliaryTypeStore })
 
-`zodToTs()`:
+const auxiliaryTypePreamble = auxiliaryTypeStore.definitions
+	.values()
+	.toArray()
+	.map((definition) => printNode(definition.node))
+	.join('\n')
+
+const categoryTypeAlias = createTypeAlias(node, 'Category')
+const categoryType = printNode(categoryTypeAlias)
+
+const outputFile = `${auxiliaryTypePreamble}\n${categoryType}`
+console.log(outputFile)
+```
+`outputFile`
+```ts
+type Auxiliary_0 = {
+    name: string;
+    subcategories: Auxiliary_0[];
+};
+type Category = Auxiliary_0;
+```
+
+Auxiliary type stores are intended to be used across multiple `zodToTs` calls so they can be reused.
 
 ```ts
-import { printNode, zodToTs } from 'zod-to-ts'
+import { z } from 'zod'
+import { createAuxiliaryTypeStore, zodToTs } from 'zod-to-ts'
 
-const identifier = 'User'
-const { node } = zodToTs(UserSchema, identifier)
-const nodeString = printNode(node)
+const Category = z.object({
+  name: z.string(),
+  get subcategories(){
+    return z.array(Category)
+  }
+})
+
+const Post = z.object({
+	id: z.number(),
+	categories: z.array(Category),
+})
+
+const auxiliaryTypeStore = createAuxiliaryTypeStore()
+const { node: categoryNode } = zodToTs(Category, { auxiliaryTypeStore })
+const { node: postNode } = zodToTs(Post, { auxiliaryTypeStore })
 ```
 
-result:
+Now if we check the store after both these calls, we still only see the single type from before.
 
-<!-- dprint-ignore -->
-```
-"{
-  username: string
-  age: number
-  inventory: {
-    name: string
-    itemId: number
-  }[]
-}"
-```
-
-`createTypeAlias()`:
-
+`categoryNode`
 ```ts
-import { createTypeAlias, printNode, zodToTs } from 'zod-to-ts'
-
-const identifier = 'User'
-const { node } = zodToTs(UserSchema, identifier)
-const typeAlias = createTypeAlias(node, identifier)
-const nodeString = printNode(typeAlias)
+Auxiliary_0
 ```
 
-result:
-
-<!-- dprint-ignore -->
-```
-"type User = {
-  username: string
-  age: number
-  inventory: {
-    name: string
-    itemId: number
-  }[]
-}"
+`postNode`
+```ts
+{
+    id: number;
+    categories: Auxiliary_0[];
+}
 ```
 
 ## Overriding Types
 
-You can use `withGetType` to override a type, which is useful when more information is needed to determine the actual type. Unfortunately, this means working with the TS AST:
+You can specify a map of type overrides to override a type with a provided TS AST node, which is useful when more information is needed to determine the actual type than can be statically inferred.
 
 ```ts
 import { z } from 'zod'
-import { withGetType, zodToTs } from 'zod-to-ts'
+import { createAuxiliaryTypeStore, type TypeOverrideMap, zodToTs } from 'zod-to-ts'
 
-const DateSchema = withGetType(
-	z.instanceof(Date),
-	(ts) => ts.factory.createIdentifier('Date'),
+const overrides: TypeOverrideMap = new Map()
+
+const DateSchema = z.instanceof(Date)
+overrides.set(DateSchema, (ts) =>
+	ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Date')),
 )
 
 const ItemSchema = z.object({
@@ -134,270 +228,20 @@ const ItemSchema = z.object({
 	date: DateSchema,
 })
 
-const { node } = zodToTs(ItemSchema, 'Item')
-```
-
-result without `withGetType` override:
-
-```ts
-type Item = {
-	name: string
-	date: any
-}
-```
-
-result with override:
-
-```ts
-type Item = {
-	name: string
-	date: Date
-}
-```
-
-[TypeScript AST Viewer](https://ts-ast-viewer.com/) can help a lot with this if you are having trouble referencing something. It even provides copy-pastable code!
-
-### Special Cases
-
-#### [z.lazy()](https://github.com/colinhacks/zod#recursive-types)
-
-Lazy types default to referencing the root type (`User` in the following example). It is impossible to determine what it is referencing otherwise.
-
-```ts
-// Zod cannot infer types when you use the z.lazy
-// so you must define it
-import { z } from 'zod'
-type User = {
-	username: string
-	friends: User[]
-}
-
-const UserSchema: z.ZodSchema<User> = z.object({
-	username: z.string(),
-	friends: z.lazy(() => UserSchema).array(),
-})
-
-const { node } = zodToTs(UserSchema, 'User')
-```
-
-result:
-
-```ts
-type User = {
-	username: string
-	friends: User[]
-}
-```
-
-But what happens when the schema looks like this?
-
-```ts
-type User = {
-	username: string
-	item: {
-		name: string
-		itemId: string
-	}
-	friends: User[]
-}
-
-// essentially when you are referencing a different field
-// and not the root type
-const friendItems = z.lazy(() => UserSchema.item).array()
-
-const UserSchema: z.ZodSchema<User> = z.object({
-	username: z.string(),
-	item: z.object({
-		name: z.string(),
-		id: z.number(),
-	}),
-	friendItems,
-})
-
-const { node } = zodToTs(UserSchema, 'User')
-```
-
-result:
-
-<!-- dprint-ignore -->
-```ts
-{
-  username: string
-  item: {
-    name: string
-    id: number
-  }
-  friendItems: User[]
-}
-```
-
-`friendItems` will still have the `User` type even though it is actually referencing `UserSchema["item"]`. You must provide the actual type using `withGetType`:
-
-```ts
-import { z } from 'zod'
-import { withGetType } from 'zod-to-ts'
-type User = {
-	username: string
-	item: {
-		name: string
-		id: number
-	}
-	friends: User[]
-}
-
-const friendItems: z.Schema<User['item'][]> = withGetType(
-	z.lazy(() => UserSchema.item).array(),
-	// return a TS AST node
-	(ts, identifier) =>
-		ts.factory.createIndexedAccessTypeNode(
-			ts.factory.createTypeReferenceNode(
-				ts.factory.createIdentifier(identifier),
-				undefined,
-			),
-			ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('item')),
-		),
-)
-
-const UserSchema: z.ZodSchema<User> = z.object({
-	username: z.string(),
-	item: z.object({
-		name: z.string(),
-		id: z.number(),
-	}),
-	friendItems,
-})
-
-const { node } = zodToTs(UserSchema, 'User')
-```
-
-result:
-
-```ts
-{
-  username: string
-  item: {
-    name: string
-    id: number
-  }
-  friendItems: User['item'][]
-}
-```
-
-#### [z.nativeEnum()](https://github.com/colinhacks/zod#native-enums)
-
-`z.enum()` is always preferred, but sometimes `z.nativeEnum()` is necessary. `z.nativeEnum()` works similarly to `z.lazy()` in that the identifier of the enum cannot be determined:
-
-```ts
-import { z } from 'zod'
-import { withGetType } from 'zod-to-ts'
-
-enum Fruit {
-  Apple = 'apple',
-  Banana = 'banana',
-  Cantaloupe = 'cantaloupe',
-}
-
-const fruitNativeEnum: = z.nativeEnum(
-  Fruit,
-)
-
-const TreeSchema = z.object({
-  fruit: fruitNativeEnum,
+const auxiliaryTypeStore = createAuxiliaryTypeStore()
+const { node } = zodToTs(ItemSchema, {
+	auxiliaryTypeStore,
+	overrides,
 })
 ```
 
-result:
+Without the override this will throw an error that `custom` types like `instanceof` are unrepresentable.
 
-<!-- dprint-ignore -->
+With the override, it will return this node.
+
 ```ts
 {
-  fruit: unknown
+    name: string;
+    date: Date;
 }
 ```
-
-There are three ways to solve this: provide an identifier to it or resolve all the enums inside `zodToTs()`.
-
-Option 1 - providing an identifier using `withGetType()`:
-
-```ts
-import { z } from 'zod'
-import { withGetType, zodToTs } from 'zod-to-ts'
-
-enum Fruit {
-	Apple = 'apple',
-	Banana = 'banana',
-	Cantaloupe = 'cantaloupe',
-}
-
-const fruitNativeEnum = withGetType(
-	z.nativeEnum(
-		Fruit,
-	),
-	// return an identifier that will be used on the enum type
-	(ts) => ts.factory.createIdentifier('Fruit'),
-)
-
-const TreeSchema = z.object({
-	fruit: fruitNativeEnum,
-})
-
-const { node } = zodToTs(TreeSchema)
-```
-
-result:
-
-<!-- dprint-ignore -->
-```ts
-{
-  fruit: Fruit
-}
-```
-
-Option 2 - resolve enums. This is the same as before, but you just need to pass an option:
-
-```ts
-const TreeTSType = zodToTs(TreeSchema, undefined, { nativeEnums: 'resolve' })
-```
-
-result:
-
-<!-- dprint-ignore -->
-```ts
-{
-  node: {
-    fruit: Fruit
-  },
-  store: {
-    nativeEnums: [
-      enum Fruit {
-        Apple = 'apple',
-        Banana = 'banana',
-        Cantaloupe = 'cantaloupe',
-      }
-    ]
-  }
-}
-```
-
-Note: These are not the actual values, they are TS representation. The actual values are TS AST nodes.
-
-This option allows you to embed the enums before the schema without actually depending on an external enum type.
-
-Option 3 - convert to union. This is the same as how ZodEnum created by z.enum([...]) is handled, but need to pass an option:
-
-```ts
-const { node } = zodToTs(TreeSchema, undefined, {
-	nativeEnums: 'union',
-})
-```
-
-result:
-
-<!-- dprint-ignore -->
-```ts
-{
-  fruit: 'apple' | 'banana' | 'cantaloupe'
-}
-```
-
-Note: These are not the actual values, they are TS representation. The actual values are TS AST nodes.

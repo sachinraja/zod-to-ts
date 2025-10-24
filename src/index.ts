@@ -1,386 +1,476 @@
-import ts from 'typescript'
-import { ZodTypeAny } from 'zod'
-import {
-	GetType,
-	GetTypeFunction,
-	LiteralType,
-	ResolvedZodToTsOptions,
-	resolveOptions,
-	ZodToTsOptions,
-	ZodToTsReturn,
-	ZodToTsStore,
-} from './types'
+import ts, { factory as f } from 'typescript'
+import type * as z4 from 'zod/v4/core'
 import {
 	addJsDocComment,
 	createTypeReferenceFromString,
-	createUnknownKeywordNode,
 	getIdentifierOrStringLiteral,
-	maybeIdentifierToTypeReference,
-} from './utils'
+	printNode,
+} from './ast-helpers'
+import {
+	type ResolvedZodToTsOptions,
+	resolveOptions,
+	type ZodToTsOptions,
+} from './types'
+import { handleUnrepresentable, literalValueToLiteralType } from './utils'
 
-const { factory: f, SyntaxKind } = ts
+function callTypeOverride(schema: z4.$ZodType, options: ZodToTsOptions) {
+	const getTypeOverride = options.overrides?.get(schema)
+	if (!getTypeOverride) return
 
-const callGetType = (
-	zod: ZodTypeAny,
-	identifier: string,
-	options: ResolvedZodToTsOptions,
-) => {
-	let type: ReturnType<GetTypeFunction> | undefined
-
-	const getTypeSchema = zod as GetType
-	// this must be called before accessing 'type'
-	if (getTypeSchema._def.getType) type = getTypeSchema._def.getType(ts, identifier, options)
-	return type
+	return getTypeOverride(ts, options)
 }
 
-export const zodToTs = (
-	zod: ZodTypeAny,
-	identifier?: string,
-	options?: ZodToTsOptions,
-): ZodToTsReturn => {
-	const resolvedIdentifier = identifier ?? 'Identifier'
-
-	const resolvedOptions = resolveOptions(options)
-
-	const store: ZodToTsStore = { nativeEnums: [] }
-
-	const node = zodToTsNode(zod, resolvedIdentifier, store, resolvedOptions)
-
-	return { node, store }
-}
-
-const zodToTsNode = (
-	zod: ZodTypeAny,
-	identifier: string,
-	store: ZodToTsStore,
+function withAuxiliaryType(
+	schema: z4.$ZodType,
+	getInner: () => ts.TypeNode,
 	options: ResolvedZodToTsOptions,
-) => {
-	const typeName = zod._def.typeName
+) {
+	const auxiliaryTypeDefinition: InternalAuxiliaryTypeDefinition = {
+		identifier: f.createIdentifier(options.auxiliaryTypeStore.nextId()),
+	}
+	const internalDefinitionsMap = options.auxiliaryTypeStore.definitions as Map<
+		z4.$ZodType,
+		InternalAuxiliaryTypeDefinition
+	>
+	internalDefinitionsMap.set(schema, auxiliaryTypeDefinition)
 
-	const getTypeType = callGetType(zod, identifier, options)
-	// special case native enum, which needs an identifier node
-	if (getTypeType && typeName !== 'ZodNativeEnum') {
-		return maybeIdentifierToTypeReference(getTypeType)
+	const node = getInner()
+
+	if (auxiliaryTypeDefinition.used) {
+		auxiliaryTypeDefinition.node = f.createTypeAliasDeclaration(
+			undefined,
+			auxiliaryTypeDefinition.identifier,
+			undefined,
+			node,
+		)
+
+		return f.createTypeReferenceNode(auxiliaryTypeDefinition.identifier)
 	}
 
-	const otherArguments = [identifier, store, options] as const
+	internalDefinitionsMap.delete(schema)
+	return node
+}
 
-	switch (typeName) {
-		case 'ZodString': {
-			return f.createKeywordTypeNode(SyntaxKind.StringKeyword)
+interface InternalAuxiliaryTypeDefinition {
+	identifier: ts.Identifier
+	node?: ts.TypeAliasDeclaration
+	used?: boolean
+}
+
+export function zodToTs(zod: z4.$ZodType, options: ZodToTsOptions) {
+	const resolvedOptions = resolveOptions(options)
+
+	const node = zodToTsNode(zod, resolvedOptions)
+
+	return { node }
+}
+
+function zodToTsNode(
+	schema: z4.$ZodType,
+	options: ResolvedZodToTsOptions,
+): ts.TypeNode {
+	const def = (schema as z4.$ZodTypes)._zod.def
+
+	const typeOverride = callTypeOverride(schema, options)
+	if (typeOverride) return typeOverride
+
+	const auxiliaryTypeDefinition =
+		options.auxiliaryTypeStore.definitions.get(schema)
+	if (auxiliaryTypeDefinition) {
+		;(auxiliaryTypeDefinition as InternalAuxiliaryTypeDefinition).used = true
+		return f.createTypeReferenceNode(auxiliaryTypeDefinition.identifier)
+	}
+
+	switch (def.type) {
+		case 'string': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
 		}
-		case 'ZodNumber': {
-			return f.createKeywordTypeNode(SyntaxKind.NumberKeyword)
+		case 'nan':
+		case 'number': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
 		}
-		case 'ZodBigInt': {
-			return f.createKeywordTypeNode(SyntaxKind.BigIntKeyword)
+		case 'bigint': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
 		}
-		case 'ZodBoolean': {
-			return f.createKeywordTypeNode(SyntaxKind.BooleanKeyword)
+		case 'success':
+		case 'boolean': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
 		}
-		case 'ZodDate': {
-			return f.createTypeReferenceNode(f.createIdentifier('Date'))
+		case 'date': {
+			return createTypeReferenceFromString('Date')
 		}
-		case 'ZodUndefined': {
-			return f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword)
+		case 'undefined': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
 		}
-		case 'ZodNull': {
+		case 'null': {
 			return f.createLiteralTypeNode(f.createNull())
 		}
-		case 'ZodVoid': {
+		case 'void': {
 			return f.createUnionTypeNode([
-				f.createKeywordTypeNode(SyntaxKind.VoidKeyword),
-				f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+				f.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
+				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
 			])
 		}
-		case 'ZodAny': {
-			return f.createKeywordTypeNode(SyntaxKind.AnyKeyword)
+		case 'any': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
 		}
-		case 'ZodUnknown': {
-			return createUnknownKeywordNode()
+		case 'unknown': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
 		}
-		case 'ZodNever': {
-			return f.createKeywordTypeNode(SyntaxKind.NeverKeyword)
+		case 'never': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
 		}
-		case 'ZodLazy': {
-			// it is impossible to determine what the lazy value is referring to
-			// so we force the user to declare it
-			if (!getTypeType) return createTypeReferenceFromString(identifier)
-			break
+		case 'lazy': {
+			return withAuxiliaryType(
+				schema,
+				() => zodToTsNode(def.getter(), options),
+				options,
+			)
 		}
-		case 'ZodLiteral': {
-			// z.literal('hi') -> 'hi'
-			let literal: ts.LiteralExpression | ts.BooleanLiteral
+		case 'literal': {
+			// z.literal(['hi', 'bye']) -> 'hi' | 'bye'
 
-			const literalValue = zod._def.value as LiteralType
-			switch (typeof literalValue) {
-				case 'number': {
-					literal = f.createNumericLiteral(literalValue)
-					break
-				}
-				case 'boolean': {
-					literal = literalValue === true ? f.createTrue() : f.createFalse()
-					break
-				}
-				default: {
-					literal = f.createStringLiteral(literalValue)
-					break
-				}
+			const members = def.values.map((value) =>
+				literalValueToLiteralType(value),
+			)
+
+			if (members.length === 1) {
+				return members[0]
 			}
 
-			return f.createLiteralTypeNode(literal)
+			return f.createUnionTypeNode(members)
 		}
-		case 'ZodObject': {
-			const properties = Object.entries(zod._def.shape())
+		case 'object': {
+			return withAuxiliaryType(
+				schema,
+				() => {
+					const properties = Object.entries(def.shape)
 
-			const members: ts.TypeElement[] = properties.map(([key, value]) => {
-				const nextZodNode = value as ZodTypeAny
-				const type = zodToTsNode(nextZodNode, ...otherArguments)
+					const members: ts.TypeElement[] = properties.map(
+						([key, memberZodSchema]) => {
+							const type = zodToTsNode(memberZodSchema, options)
+							const isOptional =
+								options.io === 'input'
+									? memberZodSchema._zod.optin
+									: memberZodSchema._zod.optout
 
-				const { typeName: nextZodNodeTypeName } = nextZodNode._def
-				const isOptional = nextZodNodeTypeName === 'ZodOptional' || nextZodNode.isOptional()
+							const propertySignature = f.createPropertySignature(
+								undefined,
+								getIdentifierOrStringLiteral(key),
+								isOptional
+									? f.createToken(ts.SyntaxKind.QuestionToken)
+									: undefined,
+								type,
+							)
 
-				const propertySignature = f.createPropertySignature(
-					undefined,
-					getIdentifierOrStringLiteral(key),
-					isOptional ? f.createToken(SyntaxKind.QuestionToken) : undefined,
-					type,
-				)
+							const description =
+								options.metadataRegistry?.get(memberZodSchema)?.description
+							if (description) {
+								addJsDocComment(propertySignature, description)
+							}
 
-				if (nextZodNode.description) {
-					addJsDocComment(propertySignature, nextZodNode.description)
-				}
+							return propertySignature
+						},
+					)
 
-				return propertySignature
-			})
-			return f.createTypeLiteralNode(members)
+					if (def.catchall) {
+						const catchallType = zodToTsNode(def.catchall, options)
+						members.push(
+							f.createIndexSignature(
+								undefined,
+								[
+									f.createParameterDeclaration(
+										undefined,
+										undefined,
+										f.createIdentifier('x'),
+										undefined,
+										f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+									),
+								],
+								catchallType,
+							),
+						)
+					}
+
+					return f.createTypeLiteralNode(members)
+				},
+				options,
+			)
 		}
 
-		case 'ZodArray': {
-			const type = zodToTsNode(zod._def.type, ...otherArguments)
+		case 'array': {
+			const type = zodToTsNode(def.element, options)
 			const node = f.createArrayTypeNode(type)
 			return node
 		}
 
-		case 'ZodEnum': {
-			// z.enum['a', 'b', 'c'] -> 'a' | 'b' | 'c
-			const types = zod._def.values.map((value: string) => f.createLiteralTypeNode(f.createStringLiteral(value)))
-			return f.createUnionTypeNode(types)
+		case 'enum': {
+			// z.enum(['a', 'b', 'c']) -> 'a' | 'b' | 'c
+			const members = Object.values(def.entries).map((value) =>
+				literalValueToLiteralType(value),
+			)
+			return f.createUnionTypeNode(members)
 		}
 
-		case 'ZodUnion': {
+		case 'union': {
 			// z.union([z.string(), z.number()]) -> string | number
-			const options: ZodTypeAny[] = zod._def.options
-			const types: ts.TypeNode[] = options.map((option) => zodToTsNode(option, ...otherArguments))
+			const types: ts.TypeNode[] = def.options.map((option) =>
+				zodToTsNode(option, options),
+			)
 			return f.createUnionTypeNode(types)
 		}
 
-		case 'ZodDiscriminatedUnion': {
-			// z.discriminatedUnion('kind', [z.object({ kind: z.literal('a'), a: z.string() }), z.object({ kind: z.literal('b'), b: z.number() })]) -> { kind: 'a', a: string } | { kind: 'b', b: number }
-			const options: ZodTypeAny[] = [...zod._def.options.values()]
-			const types: ts.TypeNode[] = options.map((option) => zodToTsNode(option, ...otherArguments))
-			return f.createUnionTypeNode(types)
-		}
-
-		case 'ZodEffects': {
-			// ignore any effects, they won't factor into the types
-			const node = zodToTsNode(zod._def.schema, ...otherArguments) as ts.TypeNode
-			return node
-		}
-
-		case 'ZodNativeEnum': {
-			const type = getTypeType
-
-			if (options.nativeEnums === 'union') {
-				// allow overriding with this option
-				if (type) return maybeIdentifierToTypeReference(type)
-
-				const types = Object.values(zod._def.values).map((value) => {
-					if (typeof value === 'number') {
-						return f.createLiteralTypeNode(f.createNumericLiteral(value))
-					}
-					return f.createLiteralTypeNode(f.createStringLiteral(value as string))
-				})
-				return f.createUnionTypeNode(types)
-			}
-
-			// z.nativeEnum(Fruits) -> Fruits
-			// can resolve Fruits into store and user can handle enums
-			if (!type) return createUnknownKeywordNode()
-
-			if (options.nativeEnums === 'resolve') {
-				const enumMembers = Object.entries(zod._def.values as Record<string, string | number>).map(([key, value]) => {
-					const literal = typeof value === 'number'
-						? f.createNumericLiteral(value)
-						: f.createStringLiteral(value)
-
-					return f.createEnumMember(
-						getIdentifierOrStringLiteral(key),
-						literal,
-					)
-				})
-
-				if (ts.isIdentifier(type)) {
-					store.nativeEnums.push(
-						f.createEnumDeclaration(
-							undefined,
-							type,
-							enumMembers,
-						),
-					)
-				} else {
-					throw new Error('getType on nativeEnum must return an identifier when nativeEnums is "resolve"')
-				}
-			}
-
-			return maybeIdentifierToTypeReference(type)
-		}
-
-		case 'ZodOptional': {
-			const innerType = zodToTsNode(zod._def.innerType, ...otherArguments) as ts.TypeNode
+		case 'optional': {
+			const innerType = zodToTsNode(def.innerType, options)
 			return f.createUnionTypeNode([
 				innerType,
-				f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
 			])
 		}
 
-		case 'ZodNullable': {
-			const innerType = zodToTsNode(zod._def.innerType, ...otherArguments) as ts.TypeNode
+		case 'nullable': {
+			const innerType = zodToTsNode(def.innerType, options)
 			return f.createUnionTypeNode([
 				innerType,
 				f.createLiteralTypeNode(f.createNull()),
 			])
 		}
 
-		case 'ZodTuple': {
+		case 'tuple': {
 			// z.tuple([z.string(), z.number()]) -> [string, number]
-			const types = zod._def.items.map((option: ZodTypeAny) => zodToTsNode(option, ...otherArguments))
+			const types = def.items.map((option) => zodToTsNode(option, options))
 			return f.createTupleTypeNode(types)
 		}
 
-		case 'ZodRecord': {
+		case 'record': {
 			// z.record(z.number()) -> { [x: string]: number }
-			const valueType = zodToTsNode(zod._def.valueType, ...otherArguments)
+			const keyType = zodToTsNode(def.keyType, options)
+			const valueType = zodToTsNode(def.valueType, options)
 
-			const node = f.createTypeLiteralNode([f.createIndexSignature(
-				undefined,
-				[f.createParameterDeclaration(
+			const node = f.createTypeLiteralNode([
+				f.createIndexSignature(
 					undefined,
-					undefined,
-					f.createIdentifier('x'),
-					undefined,
-					f.createKeywordTypeNode(SyntaxKind.StringKeyword),
-				)],
-				valueType,
-			)])
-
-			return node
-		}
-
-		case 'ZodMap': {
-			// z.map(z.string()) -> Map<string>
-			const valueType = zodToTsNode(zod._def.valueType, ...otherArguments)
-			const keyType = zodToTsNode(zod._def.keyType, ...otherArguments)
-
-			const node = f.createTypeReferenceNode(
-				f.createIdentifier('Map'),
-				[
-					keyType,
+					[
+						f.createParameterDeclaration(
+							undefined,
+							undefined,
+							f.createIdentifier('key'),
+							undefined,
+							keyType,
+						),
+					],
 					valueType,
-				],
-			)
+				),
+			])
 
 			return node
 		}
 
-		case 'ZodSet': {
+		case 'map': {
+			// z.map(z.string()) -> Map<string>
+			const keyType = zodToTsNode(def.keyType, options)
+			const valueType = zodToTsNode(def.valueType, options)
+
+			const node = f.createTypeReferenceNode(f.createIdentifier('Map'), [
+				keyType,
+				valueType,
+			])
+
+			return node
+		}
+
+		case 'set': {
 			// z.set(z.string()) -> Set<string>
-			const type = zodToTsNode(zod._def.valueType, ...otherArguments)
+			const type = zodToTsNode(def.valueType, options)
 
-			const node = f.createTypeReferenceNode(
-				f.createIdentifier('Set'),
-				[type],
-			)
+			const node = f.createTypeReferenceNode(f.createIdentifier('Set'), [type])
 			return node
 		}
 
-		case 'ZodIntersection': {
+		case 'intersection': {
 			// z.number().and(z.string()) -> number & string
-			const left = zodToTsNode(zod._def.left, ...otherArguments)
-			const right = zodToTsNode(zod._def.right, ...otherArguments)
+			const left = zodToTsNode(def.left, options)
+			const right = zodToTsNode(def.right, options)
 			const node = f.createIntersectionTypeNode([left, right])
 			return node
 		}
 
-		case 'ZodPromise': {
+		case 'promise': {
 			// z.promise(z.string()) -> Promise<string>
-			const type = zodToTsNode(zod._def.type, ...otherArguments)
+			const type = zodToTsNode(def.innerType, options)
 
-			const node = f.createTypeReferenceNode(
-				f.createIdentifier('Promise'),
-				[type],
-			)
+			const node = f.createTypeReferenceNode(f.createIdentifier('Promise'), [
+				type,
+			])
 
 			return node
 		}
 
-		case 'ZodFunction': {
-			// z.function().args(z.string()).returns(z.number()) -> (args_0: string) => number
-			const argumentTypes = zod._def.args._def.items.map((argument: ZodTypeAny, index: number) => {
-				const argumentType = zodToTsNode(argument, ...otherArguments)
+		case 'function': {
+			// z.function({ input: [z.string()], output: z.number() }) -> (args_0: string) => number
+			const argumentSchemas = (def.input as z4.$ZodTuple)._zod.def.items
+			const parameterTypes = argumentSchemas.map((argument, index: number) => {
+				const parameterType = zodToTsNode(argument, options)
 
 				return f.createParameterDeclaration(
 					undefined,
 					undefined,
 					f.createIdentifier(`args_${index}`),
 					undefined,
-					argumentType,
+					parameterType,
 				)
-			}) as ts.ParameterDeclaration[]
+			})
 
-			argumentTypes.push(
-				f.createParameterDeclaration(
-					undefined,
-					f.createToken(SyntaxKind.DotDotDotToken),
-					f.createIdentifier(`args_${argumentTypes.length}`),
-					undefined,
-					f.createArrayTypeNode(createUnknownKeywordNode()),
-				),
-			)
-
-			const returnType = zodToTsNode(zod._def.returns, ...otherArguments)
+			const returnType = zodToTsNode(def.output, options)
 
 			const node = f.createFunctionTypeNode(
 				undefined,
-				argumentTypes,
+				parameterTypes,
 				returnType,
 			)
 
 			return node
 		}
 
-		case 'ZodDefault': {
+		case 'prefault':
+		case 'default': {
 			// z.string().optional().default('hi') -> string
-			const type = zodToTsNode(zod._def.innerType, ...otherArguments) as ts.TypeNode
+			// if it's an input type, the type is optional
+			if (options.io === 'input') {
+			}
+			return zodToTsNode(def.innerType, options)
+		}
+		case 'file': {
+			return createTypeReferenceFromString('File')
+		}
+		case 'pipe': {
+			const innerType =
+				options.io === 'input'
+					? def.in._zod.def.type === 'transform'
+						? def.out
+						: def.in
+					: def.out
+			return zodToTsNode(innerType, options)
+		}
+		case 'readonly': {
+			const innerType = zodToTsNode(def.innerType, options)
+			if (ts.isArrayTypeNode(innerType) || ts.isTupleTypeNode(innerType)) {
+				return f.createTypeOperatorNode(
+					ts.SyntaxKind.ReadonlyKeyword,
+					innerType,
+				)
+			}
 
-			const filteredNodes: ts.Node[] = []
+			if (ts.isTypeLiteralNode(innerType)) {
+				const members = innerType.members.map((member) => {
+					if (ts.isPropertySignature(member)) {
+						return f.updatePropertySignature(
+							member,
+							[
+								...(member.modifiers ?? []),
+								f.createToken(ts.SyntaxKind.ReadonlyKeyword),
+							],
+							member.name,
+							member.questionToken,
+							member.type,
+						)
+					}
+					return member
+				})
 
-			type.forEachChild((node) => {
-				if (!([SyntaxKind.UndefinedKeyword].includes(node.kind))) {
-					filteredNodes.push(node)
+				return f.createTypeLiteralNode(members)
+			}
+
+			if (
+				ts.isTypeReferenceNode(innerType) &&
+				ts.isIdentifier(innerType.typeName)
+			) {
+				const identifier = innerType.typeName.text
+				if (identifier === 'Set')
+					return f.createTypeReferenceNode(
+						f.createIdentifier('ReadonlySet'),
+						innerType.typeArguments,
+					)
+
+				if (identifier === 'Map')
+					return f.createTypeReferenceNode(
+						f.createIdentifier('ReadonlyMap'),
+						innerType.typeArguments,
+					)
+			}
+
+			// fall back to just returning the inner type
+			return innerType
+		}
+		case 'catch': {
+			// z.string().catch('default') -> string
+			return zodToTsNode(def.innerType, options)
+		}
+		case 'nonoptional': {
+			// z.string().optional().nonoptional() -> Exclude<string | undefined, undefined> -> string
+			return f.createTypeReferenceNode('Exclude', [
+				zodToTsNode(def.innerType, options),
+				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+			])
+		}
+		case 'symbol': {
+			return f.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword)
+		}
+		case 'template_literal': {
+			const partNodes = def.parts.map((part) => {
+				if (typeof part !== 'object' || part === null) {
+					return literalValueToLiteralType(part)
 				}
+				return zodToTsNode(part, options)
 			})
 
-			// @ts-expect-error needed to set children
-			type.types = filteredNodes
+			let templateHead: ts.TemplateHead | undefined
 
-			return type
+			const templateSpans: ts.TemplateLiteralTypeSpan[] = []
+			let currentTypeSpanNode: ts.TypeNode | undefined
+			let currentMiddle = ''
+			for (const node of partNodes) {
+				if (ts.isLiteralTypeNode(node) && ts.isStringLiteral(node.literal)) {
+					currentMiddle += node.literal.text
+					continue
+				}
+
+				if (currentTypeSpanNode) {
+					const templateSpan = f.createTemplateLiteralTypeSpan(
+						currentTypeSpanNode,
+						f.createTemplateMiddle(currentMiddle),
+					)
+
+					templateSpans.push(templateSpan)
+				} else {
+					// if it's the first, set the head
+					templateHead = f.createTemplateHead(currentMiddle)
+					currentTypeSpanNode = node
+				}
+
+				currentMiddle = ''
+				currentTypeSpanNode = node
+			}
+
+			if (templateHead && currentTypeSpanNode) {
+				const templateSpan = f.createTemplateLiteralTypeSpan(
+					currentTypeSpanNode,
+					f.createTemplateTail(currentMiddle),
+				)
+				templateSpans.push(templateSpan)
+			} else {
+				return f.createLiteralTypeNode(
+					f.createNoSubstitutionTemplateLiteral(currentMiddle),
+				)
+			}
+
+			return f.createTemplateLiteralType(templateHead, templateSpans)
 		}
 	}
 
-	return f.createKeywordTypeNode(SyntaxKind.AnyKeyword)
+	return handleUnrepresentable(options.unrepresentable, def.type)
 }
 
-export { createTypeAlias, printNode, withGetType } from './utils'
-
-export { type GetType, type ZodToTsOptions } from './types'
+export { createTypeAlias, printNode } from './ast-helpers'
+export type { TypeOverrideMap, ZodToTsOptions } from './types'
+export { createAuxiliaryTypeStore } from './utils'

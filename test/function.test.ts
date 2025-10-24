@@ -1,31 +1,40 @@
 import { expect, it } from 'vitest'
 import { z } from 'zod'
-import { zodToTs } from '../src'
+import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 it('prints correct typescript', () => {
-	const schema = z.function().args(z.string().nullish().default('name'), z.boolean(), z.boolean()).returns(
-		z.string(),
-	)
-	const { node } = zodToTs(schema, 'Function')
+	const schema = z.function({
+		input: [z.string().nullish().default('name'), z.boolean(), z.boolean()],
+		output: z.string(),
+	})
+
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(
-		'"(args_0: (string | null), args_1: boolean, args_2: boolean, ...args_3: unknown[]) => string"',
+		`"(args_0: (string | null) | undefined, args_1: boolean, args_2: boolean) => string"`,
 	)
 })
 
 it('prints correct typescript 2', () => {
-	const schema = z.function().args(z.object({ name: z.string(), price: z.number(), comment: z.string() })).describe(
-		'create an item',
-	)
+	const schema = z
+		.function({
+			input: [
+				z.object({ name: z.string(), price: z.number(), comment: z.string() }),
+			],
+			output: z.unknown(),
+		})
+		.describe('create an item')
 
-	const { node } = zodToTs(schema)
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(`
 		"(args_0: {
 		    name: string;
 		    price: number;
 		    comment: string;
-		}, ...args_1: unknown[]) => unknown"
+		}) => unknown"
 	`)
 })

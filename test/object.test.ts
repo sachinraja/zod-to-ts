@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-escape */
 import { expect, it } from 'vitest'
 import { z } from 'zod'
-import { zodToTs } from '../src'
+import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 it('supports string literal properties', () => {
@@ -10,12 +10,13 @@ it('supports string literal properties', () => {
 		5: z.number(),
 	})
 
-	const { node } = zodToTs(schema)
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(`
 		"{
-		    \\"5\\": number;
-		    \\"string-literal\\": string;
+		    "5": number;
+		    "string-literal": string;
 		}"
 	`)
 })
@@ -27,7 +28,8 @@ it('does not unnecessary quote identifiers', () => {
 		countryOfOrigin: z.string(),
 	})
 
-	const { node } = zodToTs(schema)
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(`
 		"{
@@ -45,25 +47,26 @@ it('escapes correctly', () => {
 		"'": z.string(),
 		'`': z.string(),
 		'\n': z.number(),
-		'$e': z.any(),
+		$e: z.any(),
 		'4t': z.any(),
-		'_r': z.any(),
+		_r: z.any(),
 		'-r': z.undefined(),
 	})
 
-	const { node } = zodToTs(schema)
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(`
 		"{
-		    \\"\\\\\\\\\\": string;
-		    \\"\\\\\\"\\": string;
-		    \\"'\\": string;
-		    \\"\`\\": string;
-		    \\"\\\\n\\": number;
-		    \$e?: any;
-		    \\"4t\\"?: any;
-		    _r?: any;
-		    \\"-r\\"?: undefined;
+		    "\\\\": string;
+		    "\\"": string;
+		    "'": string;
+		    "\`": string;
+		    "\\n": number;
+		    $e: any;
+		    "4t": any;
+		    _r: any;
+		    "-r"?: undefined;
 		}"
 	`)
 })
@@ -74,7 +77,8 @@ it('supports zod.describe()', () => {
 		price: z.number().describe('The price of the item'),
 	})
 
-	const { node } = zodToTs(schema)
+	const auxiliaryTypeStore = createAuxiliaryTypeStore()
+	const { node } = zodToTs(schema, { auxiliaryTypeStore })
 
 	expect(printNodeTest(node)).toMatchInlineSnapshot(`
 		"{

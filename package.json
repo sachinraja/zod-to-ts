@@ -3,6 +3,11 @@
 	"version": "1.2.0",
 	"type": "module",
 	"description": "generate TypeScript types from your Zod schema",
+	"author": {
+		"name": "Sachin Raja",
+		"url": "https://github.com/sachinraja"
+	},
+	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/sachinraja/zod-to-ts.git"
@@ -11,15 +16,7 @@
 	"bugs": {
 		"url": "https://github.com/sachinraja/zod-to-ts/issues"
 	},
-	"main": "dist/index.cjs",
-	"exports": {
-		"./package.json": "./package.json",
-		".": {
-			"import": "./dist/index.js",
-			"default": "./dist/index.cjs"
-		}
-	},
-	"types": "dist/index.d.ts",
+	"zshy": "./src/index.ts",
 	"files": [
 		"dist"
 	],
@@ -29,48 +26,38 @@
 		"generator"
 	],
 	"scripts": {
-		"build": "tsup",
-		"watch": "tsup --watch --no-dts",
-		"format": "dprint fmt",
+		"build": "zshy",
+		"format": "biome format . --write",
 		"lint": "run-p lint:*",
-		"lint:format": "dprint check",
+		"lint:biome": "biome check",
 		"lint:types": "tsc",
-		"lint:js": "eslint .",
-		"prepublishOnly": "pnpm build",
 		"test": "vitest",
 		"example": "tsx test/example.ts"
 	},
 	"peerDependencies": {
-		"typescript": "^4.9.4 || ^5.0.2",
-		"zod": "^3"
+		"typescript": "^5.0.0",
+		"zod": "^3.25.0 || ^4.0.0"
 	},
 	"devDependencies": {
-		"@sachinraja/eslint-config": "0.3.0",
-		"@types/node": "20.5.0",
-		"dprint": "0.40.2",
-		"eslint": "8.47.0",
+		"@biomejs/biome": "2.2.6",
+		"@types/node": "24.7.2",
 		"npm-run-all": "4.1.5",
-		"tsup": "7.2.0",
-		"tsx": "3.12.7",
-		"typescript": "5.1.6",
-		"vite": "4.4.9",
-		"vitest": "0.34.1",
-		"zod": "3.22.1"
+		"tsx": "4.20.6",
+		"typescript": "5.9.3",
+		"vite": "7.1.10",
+		"vitest": "3.2.4",
+		"zod": "4.1.12",
+		"zshy": "^0.4.3"
 	},
-	"sideEffects": false,
-	"tsup": {
-		"entry": [
-			"src/index.ts"
-		],
-		"format": [
-			"esm",
-			"cjs"
-		],
-		"dts": {
-			"resolve": true
-		},
-		"splitting": true,
-		"clean": true
-	},
-	"packageManager": "pnpm@8.15.9"
+	"packageManager": "pnpm@10.18.3",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.cts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.cts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
+	}
 }
