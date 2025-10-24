@@ -4,7 +4,6 @@ import {
 	addJsDocComment,
 	createTypeReferenceFromString,
 	getIdentifierOrStringLiteral,
-	printNode,
 } from './ast-helpers'
 import {
 	type ResolvedZodToTsOptions,

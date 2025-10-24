@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toJSONSchema, z } from 'zod'
+import { z } from 'zod'
 import { createAuxiliaryTypeStore, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
@@ -70,7 +70,6 @@ describe('z.nullable()', () => {
 describe('z.nonoptional()', () => {
 	it('removes optional modifier', () => {
 		const schema = z.object({ str: z.string().optional().default('hi') })
-		type SchemaType = z.output<typeof schema>
 
 		const auxiliaryTypeStore = createAuxiliaryTypeStore()
 		const { node } = zodToTs(schema, { auxiliaryTypeStore })

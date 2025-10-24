@@ -142,7 +142,7 @@ Wait what happened to the types for the node? Why is it just a type reference? L
 	}`
 }
 ```
-In this example, \` is used to denote a TS AST node, not a string. So this is where our types went! An auxiliary type had to be created to properly reflect the recursion.
+So this is where our types went! An auxiliary type had to be created to properly reflect the recursion.
 
 To extract all the auxiliary types from the store you can use the following code.
 ```ts
