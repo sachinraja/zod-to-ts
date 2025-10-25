@@ -32,6 +32,14 @@ export function literalValueToLiteralType(literalValue: z4.util.Literal) {
 		case 'string':
 			return f.createLiteralTypeNode(f.createStringLiteral(literalValue))
 		case 'number':
+			if (literalValue < 0) {
+				return f.createLiteralTypeNode(
+					f.createPrefixUnaryExpression(
+						ts.SyntaxKind.MinusToken,
+						f.createNumericLiteral(Math.abs(literalValue)),
+					),
+				)
+			}
 			return f.createLiteralTypeNode(f.createNumericLiteral(literalValue))
 		case 'bigint':
 			return f.createLiteralTypeNode(

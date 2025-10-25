@@ -83,13 +83,18 @@ export const example = z.object({
 	}),
 	y: z.string().optional().default('hi'),
 	z: z.string().or(z.number()).and(z.bigint().nullish().default(1000n)),
-	bb: dateType,
-	cc: z.lazy(() => z.string()),
-	ee: z.discriminatedUnion('kind', [
+	aa: dateType,
+	ab: z.lazy(() => z.string()),
+	ac: z.discriminatedUnion('kind', [
 		z.object({ kind: z.literal('circle'), radius: z.number() }),
 		z.object({ kind: z.literal('square'), x: z.number() }),
 		z.object({ kind: z.literal('triangle'), x: z.number(), y: z.number() }),
 	]),
+	ad: z.string().catch('fallback value'),
+	ae: z.nativeEnum({
+		NEG_1: -1,
+		POS_1: +1,
+	}),
 })
 
 const { node } = zodToTs(example, {
