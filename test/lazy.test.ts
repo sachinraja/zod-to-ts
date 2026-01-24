@@ -43,7 +43,7 @@ describe('z.json()', () => {
 			  {
 			    "identifier": "Auxiliary_0",
 			    "node": "type Auxiliary_0 = string | number | boolean | null | Auxiliary_0[] | {
-			    [key: string]: Auxiliary_0;
+			    [key: string]: Auxiliary_0 | undefined;
 			};",
 			  },
 			]
