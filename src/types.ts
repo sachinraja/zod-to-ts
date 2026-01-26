@@ -1,18 +1,41 @@
 import type ts from 'typescript'
 import * as z4 from 'zod/v4/core'
 
+/** A function which overrides the default Zod to TypeScript mapping.
+ * @param typescript TypeScript compiler interface for creating AST nodes
+ * @param options The options that were passed to `zodToTs`
+ * @returns the TypeScript AST node for this Zod type
+ */
 export type TypeOverrideFunction = (
 	typescript: typeof ts,
 	options: ZodToTsOptions,
 ) => ts.TypeNode
+
+/** A function which may optionally override the default Zod to TypeScript mapping.
+ * @param schema Zod schema to potentially override
+ * @param typescript TypeScript compiler interface for creating AST nodes
+ * @param options The options that were passed to `zodToTs`
+ * @returns the TypeScript AST node for this Zod type, or `undefined` if this Zod type should not be overridden
+ */
+export type OptionalTypeOverrideFunction = (
+	schema: z4.$ZodType,
+	typescript: typeof ts,
+	options: ZodToTsOptions,
+) => ts.TypeNode | undefined
 
 export type TypeOverrideMap = Map<z4.$ZodType, TypeOverrideFunction>
 
 interface OptionalZodToTsOptions {
 	/**
 	 * A registry of Zod schemas to override the type generation for.
+	 * Takes precedence over `overrideFunction`.
 	 */
 	overrides: TypeOverrideMap
+	/**
+	 * A function to optionally override Zod types not matched in `overrides`.
+	 * Types that appear in `overrides` will be mapped there instead of passed to this function.
+	 */
+	overrideFunction: OptionalTypeOverrideFunction
 }
 
 interface WithDefaultZodToTsOptions {
@@ -65,6 +88,7 @@ export function resolveOptions(
 		unrepresentable: options.unrepresentable ?? 'throw',
 		io: options.io ?? 'output',
 		overrides: options.overrides,
+		overrideFunction: options.overrideFunction,
 		metadataRegistry: options.metadataRegistry ?? z4.globalRegistry,
 		auxiliaryTypeStore: options.auxiliaryTypeStore,
 	}
