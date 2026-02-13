@@ -22,3 +22,23 @@ describe('z.describe()', () => {
 		`)
 	})
 })
+
+describe('z.describe().optional()', () => {
+	it('supports describing optional schema', () => {
+		const keySchema = z.string()
+
+		const schema = z.object({
+			key: keySchema.describe('Comment for key').optional(),
+		})
+
+		const auxiliaryTypeStore = createAuxiliaryTypeStore()
+		const { node } = zodToTs(schema, { auxiliaryTypeStore })
+
+		expect(printNodeTest(node)).toMatchInlineSnapshot(`
+			"{
+			    /** Comment for key */
+			    key?: string | undefined;
+			}"
+		`)
+	})
+})
