@@ -24,7 +24,9 @@ function callTypeOverride(schema: z4.$ZodType, options: ZodToTsOptions) {
 }
 
 // This only applies to wrapper types
-function hasInnerType(def: z4.$ZodTypeDef): def is z4.$ZodTypeDef & { innerType: z4.$ZodType } {
+function hasInnerType(
+	def: z4.$ZodTypeDef,
+): def is z4.$ZodTypeDef & { innerType: z4.$ZodType } {
 	return 'innerType' in def
 }
 
@@ -185,7 +187,10 @@ function zodToTsNode(
 								type,
 							)
 
-							const description = getDescriptionFromSchema(memberZodSchema, options)
+							const description = getDescriptionFromSchema(
+								memberZodSchema,
+								options,
+							)
 							if (description) {
 								addJsDocComment(propertySignature, description)
 							}
@@ -494,10 +499,10 @@ function zodToTsNode(
 
 export { createTypeAlias, printNode } from './ast-helpers'
 export type {
+	AuxiliaryTypeStore,
+	OptionalTypeOverrideFunction,
+	TypeOverrideFunction,
 	TypeOverrideMap,
 	ZodToTsOptions,
-	AuxiliaryTypeStore,
-	TypeOverrideFunction,
-	OptionalTypeOverrideFunction,
 } from './types'
 export { createAuxiliaryTypeStore } from './utils'

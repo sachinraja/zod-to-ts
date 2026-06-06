@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod/v4'
-import { createAuxiliaryTypeStore, TypeOverrideMap, zodToTs } from '../src'
+import { createAuxiliaryTypeStore, type TypeOverrideMap, zodToTs } from '../src'
 import { printNodeTest } from './utils'
 
 describe('overrides option', () => {
