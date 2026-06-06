@@ -14,9 +14,13 @@ import { handleUnrepresentable, literalValueToLiteralType } from './utils'
 
 function callTypeOverride(schema: z4.$ZodType, options: ZodToTsOptions) {
 	const getTypeOverride = options.overrides?.get(schema)
-	if (!getTypeOverride) return
-
-	return getTypeOverride(ts, options)
+	if (getTypeOverride) {
+		return getTypeOverride(ts, options)
+	} else if (options.overrideFunction) {
+		return options.overrideFunction(schema, ts, options)
+	} else {
+		return undefined
+	}
 }
 
 function withAuxiliaryType(
@@ -471,5 +475,11 @@ function zodToTsNode(
 }
 
 export { createTypeAlias, printNode } from './ast-helpers'
-export type { TypeOverrideMap, ZodToTsOptions } from './types'
+export type {
+	TypeOverrideMap,
+	ZodToTsOptions,
+	AuxiliaryTypeStore,
+	TypeOverrideFunction,
+	OptionalTypeOverrideFunction,
+} from './types'
 export { createAuxiliaryTypeStore } from './utils'
