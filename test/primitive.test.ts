@@ -27,7 +27,7 @@ describe('PrimitiveSchema', () => {
 			    age: number;
 			    isAdmin: boolean;
 			    createdAt: Date;
-			    undef?: undefined;
+			    undef: undefined;
 			    nu: null;
 			    vo: void | undefined;
 			    an: any;

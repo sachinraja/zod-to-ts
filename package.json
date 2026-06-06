@@ -34,17 +34,17 @@
 		"test": "vitest"
 	},
 	"peerDependencies": {
-		"typescript": "^5.0.0",
+		"typescript": "^5 || ^6",
 		"zod": "^3.25.0 || ^4.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.6",
 		"@types/node": "24.7.2",
-		"typescript": "5.9.3",
-		"vite": "7.1.10",
-		"vitest": "3.2.4",
-		"zod": "4.1.12",
-		"zshy": "0.4.4"
+		"typescript": "6.0.3",
+		"vite": "8.0.16",
+		"vitest": "4.1.8",
+		"zod": "4.4.3",
+		"zshy": "0.7.2"
 	},
 	"packageManager": "pnpm@10.18.3",
 	"main": "./dist/index.cjs",

@@ -66,7 +66,7 @@ it('escapes correctly', () => {
 		    $e: any;
 		    "4t": any;
 		    _r: any;
-		    "-r"?: undefined;
+		    "-r": undefined;
 		}"
 	`)
 })

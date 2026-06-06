@@ -97,7 +97,19 @@ export const example = z.object({
 	}),
 })
 
-const { node } = zodToTs(example, {
+// define your Zod schema
+const UserSchema = z.object({
+	username: z.string().describe("User's name"),
+	age: z.number().describe("User's age"),
+	inventory: z
+		.object({
+			name: z.string().describe('Item name'),
+			itemId: z.number().describe('Item ID number'),
+		})
+		.array(),
+})
+
+const { node } = zodToTs(UserSchema, {
 	auxiliaryTypeStore: createAuxiliaryTypeStore(),
 	overrides,
 })

@@ -1,3 +1,0 @@
-{
-  extends: ['config:js-lib', 'github>sachinraja/renovate-config:js'],
-}
