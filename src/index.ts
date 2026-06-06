@@ -269,27 +269,57 @@ function zodToTsNode(
 		}
 
 		case 'record': {
-			// z.record(z.number()) -> { [x: string]: number }
+			// z.record(z.string(), z.number()) -> { [x: string]: number }
 			const keyType = zodToTsNode(def.keyType, options)
 			const valueType = zodToTsNode(def.valueType, options)
+			// where we need { [x in K]: V } instead of { [x: K]: V }
+			const needsMappedType =
+				def.keyType._zod.def.type === 'enum' ||
+				def.keyType._zod.def.type === 'literal'
+			const isPartial = def.keyType._zod.values === undefined
 
-			const node = f.createTypeLiteralNode([
-				f.createIndexSignature(
+			if (needsMappedType) {
+				return f.createMappedTypeNode(
 					undefined,
-					[
-						f.createParameterDeclaration(
-							undefined,
-							undefined,
-							f.createIdentifier('key'),
-							undefined,
-							keyType,
-						),
-					],
+					f.createTypeParameterDeclaration(
+						undefined,
+						f.createIdentifier('key'),
+						keyType,
+					),
+					undefined,
+					isPartial ? f.createToken(ts.SyntaxKind.QuestionToken) : undefined,
 					valueType,
-				),
-			])
-
-			return node
+					undefined,
+				)
+			} else {
+				return f.createTypeLiteralNode([
+					f.createIndexSignature(
+						undefined,
+						[
+							f.createParameterDeclaration(
+								undefined,
+								undefined,
+								f.createIdentifier('key'),
+								undefined,
+								keyType,
+							),
+						],
+						// this results in a different type than zod for a record of string keys:
+						// we return { [key: string]: T | undefined } and zod returns { [key: string]: T }.
+						// but those are only semantically different if you don't use noUncheckedIndexedAccess.
+						//
+						// zod implements partialRecord() by setting values to undefined on the key type and then
+						// calling record(), so i don't think it is possible to tell whether you called
+						// partialRecord() or record() for key types that would already have values set to undefined.
+						isPartial
+							? f.createUnionTypeNode([
+									valueType,
+									f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+								])
+							: valueType,
+					),
+				])
+			}
 		}
 
 		case 'map': {
