@@ -23,6 +23,25 @@ function callTypeOverride(schema: z4.$ZodType, options: ZodToTsOptions) {
 	}
 }
 
+// This only applies to wrapper types
+function hasInnerType(def: z4.$ZodTypeDef): def is z4.$ZodTypeDef & { innerType: z4.$ZodType } {
+	return 'innerType' in def
+}
+
+function getDescriptionFromSchema(
+	schema: z4.$ZodType,
+	options: ResolvedZodToTsOptions,
+): string | undefined {
+	const directDescription = options.metadataRegistry?.get(schema)?.description
+	if (directDescription) return directDescription
+
+	if (hasInnerType(schema._zod.def)) {
+		return options.metadataRegistry?.get(schema._zod.def.innerType)?.description
+	}
+
+	return undefined
+}
+
 function withAuxiliaryType(
 	schema: z4.$ZodType,
 	getInner: () => ts.TypeNode,
@@ -166,8 +185,7 @@ function zodToTsNode(
 								type,
 							)
 
-							const description =
-								options.metadataRegistry?.get(memberZodSchema)?.description
+							const description = getDescriptionFromSchema(memberZodSchema, options)
 							if (description) {
 								addJsDocComment(propertySignature, description)
 							}
