@@ -8,7 +8,7 @@ Generate TypeScript types from your [Zod](https://github.com/colinhacks/zod) sch
 npm install zod-to-ts
 ```
 
-This package has peer dependencies of zod@4 and typescript@5.
+This package has peer dependencies of zod@4 and typescript@7. Nodes are built with TypeScript 7's `typescript/unstable/ast` API, and `printNode` prints them with the native compiler, which it starts as a child process on first use.
 
 ## Usage
 
@@ -234,6 +234,8 @@ const { node } = zodToTs(ItemSchema, {
 	overrides,
 })
 ```
+
+Override functions receive TypeScript 7's AST `factory`, `SyntaxKind` and `TokenFlags`.
 
 Without the override this will throw an error that `custom` types like `instanceof` are unrepresentable.
 

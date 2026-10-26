@@ -1,27 +1,32 @@
-import type ts from 'typescript'
+import type {
+	Identifier,
+	TypeAliasDeclaration,
+	TypeNode,
+} from 'typescript/unstable/ast'
 import * as z4 from 'zod/v4/core'
+import type { TypeScriptApi } from './ast-helpers'
 
 /** A function which overrides the default Zod to TypeScript mapping.
- * @param typescript TypeScript compiler interface for creating AST nodes
+ * @param typescript TypeScript 7 `factory`, `SyntaxKind` and `TokenFlags` for creating AST nodes
  * @param options The options that were passed to `zodToTs`
  * @returns the TypeScript AST node for this Zod type
  */
 export type TypeOverrideFunction = (
-	typescript: typeof ts,
+	typescript: TypeScriptApi,
 	options: ZodToTsOptions,
-) => ts.TypeNode
+) => TypeNode
 
 /** A function which may optionally override the default Zod to TypeScript mapping.
  * @param schema Zod schema to potentially override
- * @param typescript TypeScript compiler interface for creating AST nodes
+ * @param typescript TypeScript 7 `factory`, `SyntaxKind` and `TokenFlags` for creating AST nodes
  * @param options The options that were passed to `zodToTs`
  * @returns the TypeScript AST node for this Zod type, or `undefined` if this Zod type should not be overridden
  */
 export type OptionalTypeOverrideFunction = (
 	schema: z4.$ZodType,
-	typescript: typeof ts,
+	typescript: TypeScriptApi,
 	options: ZodToTsOptions,
-) => ts.TypeNode | undefined
+) => TypeNode | undefined
 
 export type TypeOverrideMap = Map<z4.$ZodType, TypeOverrideFunction>
 
@@ -58,8 +63,8 @@ interface WithDefaultZodToTsOptions {
 }
 
 export interface AuxiliaryTypeDefinition {
-	identifier: ts.Identifier
-	node: ts.TypeAliasDeclaration
+	identifier: Identifier
+	node: TypeAliasDeclaration
 }
 
 export interface AuxiliaryTypeStore {

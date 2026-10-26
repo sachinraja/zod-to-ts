@@ -9,7 +9,13 @@ describe('overrides option', () => {
 		const schema = z.object({ override: overrideMe, dontOverride: z.string() })
 		const auxiliaryTypeStore = createAuxiliaryTypeStore()
 		const overrides: TypeOverrideMap = new Map([
-			[overrideMe, (ts) => ts.factory.createTypeReferenceNode('Overridden')],
+			[
+				overrideMe,
+				(ts) =>
+					ts.factory.createTypeReferenceNode(
+						ts.factory.createIdentifier('Overridden'),
+					),
+			],
 		])
 
 		const { node } = zodToTs(schema, { auxiliaryTypeStore, overrides })
@@ -28,7 +34,10 @@ describe('overrides option', () => {
 		const overrides: TypeOverrideMap = new Map([
 			[
 				overrideMe,
-				(ts) => ts.factory.createTypeReferenceNode('OverriddenByMap'),
+				(ts) =>
+					ts.factory.createTypeReferenceNode(
+						ts.factory.createIdentifier('OverriddenByMap'),
+					),
 			],
 		])
 
@@ -37,7 +46,9 @@ describe('overrides option', () => {
 			overrides,
 			overrideFunction: (schema, ts) => {
 				if (schema === overrideMe) {
-					return ts.factory.createTypeReferenceNode('OverriddenByFunction')
+					return ts.factory.createTypeReferenceNode(
+						ts.factory.createIdentifier('OverriddenByFunction'),
+					)
 				} else {
 					return undefined
 				}
@@ -60,7 +71,9 @@ it('overrideFunction option', () => {
 		auxiliaryTypeStore,
 		overrideFunction: (schema, ts) => {
 			if (schema === overrideMe) {
-				return ts.factory.createTypeReferenceNode('Overridden')
+				return ts.factory.createTypeReferenceNode(
+					ts.factory.createIdentifier('Overridden'),
+				)
 			} else {
 				return undefined
 			}

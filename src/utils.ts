@@ -1,4 +1,5 @@
-import ts, { factory as f } from 'typescript'
+import { SyntaxKind, TokenFlags } from 'typescript/unstable/ast'
+import * as f from 'typescript/unstable/ast/factory'
 import type * as z4 from 'zod/v4/core'
 import type { AuxiliaryTypeStore, ZodToTsOptions } from './types'
 
@@ -7,7 +8,7 @@ export function handleUnrepresentable(
 	unrepresentableType: string,
 ) {
 	if (unrepresentable === 'any') {
-		return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+		return f.createKeywordTypeNode(SyntaxKind.AnyKeyword)
 	}
 
 	throw new Error(
@@ -30,29 +31,41 @@ export function createAuxiliaryTypeStore(): AuxiliaryTypeStore {
 export function literalValueToLiteralType(literalValue: z4.util.Literal) {
 	switch (typeof literalValue) {
 		case 'string':
-			return f.createLiteralTypeNode(f.createStringLiteral(literalValue))
+			return f.createLiteralTypeNode(
+				f.createStringLiteral(literalValue, TokenFlags.None),
+			)
 		case 'number':
 			if (literalValue < 0) {
 				return f.createLiteralTypeNode(
 					f.createPrefixUnaryExpression(
-						ts.SyntaxKind.MinusToken,
-						f.createNumericLiteral(Math.abs(literalValue)),
+						SyntaxKind.MinusToken,
+						f.createNumericLiteral(
+							Math.abs(literalValue).toString(),
+							TokenFlags.None,
+						),
 					),
 				)
 			}
-			return f.createLiteralTypeNode(f.createNumericLiteral(literalValue))
+			return f.createLiteralTypeNode(
+				f.createNumericLiteral(literalValue.toString(), TokenFlags.None),
+			)
 		case 'bigint':
 			return f.createLiteralTypeNode(
-				f.createBigIntLiteral(`${literalValue.toString()}n`),
+				f.createBigIntLiteral(`${literalValue.toString()}n`, TokenFlags.None),
 			)
 		case 'boolean':
-			return literalValue === true
-				? f.createLiteralTypeNode(f.createTrue())
-				: f.createLiteralTypeNode(f.createFalse())
+			return f.createLiteralTypeNode(
+				f.createKeywordExpression(
+					literalValue ? SyntaxKind.TrueKeyword : SyntaxKind.FalseKeyword,
+				),
+			)
 		case 'object':
-			if (literalValue === null) return f.createLiteralTypeNode(f.createNull())
+			if (literalValue === null)
+				return f.createLiteralTypeNode(
+					f.createKeywordExpression(SyntaxKind.NullKeyword),
+				)
 			throw new Error('Object literals are not supported')
 		case 'undefined':
-			return f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword)
 	}
 }

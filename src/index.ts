@@ -1,9 +1,29 @@
-import ts, { factory as f } from 'typescript'
+import {
+	type Identifier,
+	isArrayTypeNode,
+	isIdentifier,
+	isLiteralTypeNode,
+	isPropertySignatureDeclaration,
+	isStringLiteral,
+	isTupleTypeNode,
+	isTypeLiteralNode,
+	isTypeReferenceNode,
+	SyntaxKind,
+	type TemplateHead,
+	type TemplateLiteralTypeSpan,
+	TokenFlags,
+	type TypeAliasDeclaration,
+	type TypeElement,
+	type TypeNode,
+} from 'typescript/unstable/ast'
+import * as f from 'typescript/unstable/ast/factory'
 import type * as z4 from 'zod/v4/core'
 import {
 	addJsDocComment,
+	copyJsDocComment,
 	createTypeReferenceFromString,
 	getIdentifierOrStringLiteral,
+	typescript,
 } from './ast-helpers'
 import {
 	type ResolvedZodToTsOptions,
@@ -15,9 +35,9 @@ import { handleUnrepresentable, literalValueToLiteralType } from './utils'
 function callTypeOverride(schema: z4.$ZodType, options: ZodToTsOptions) {
 	const getTypeOverride = options.overrides?.get(schema)
 	if (getTypeOverride) {
-		return getTypeOverride(ts, options)
+		return getTypeOverride(typescript, options)
 	} else if (options.overrideFunction) {
-		return options.overrideFunction(schema, ts, options)
+		return options.overrideFunction(schema, typescript, options)
 	} else {
 		return undefined
 	}
@@ -46,7 +66,7 @@ function getDescriptionFromSchema(
 
 function withAuxiliaryType(
 	schema: z4.$ZodType,
-	getInner: () => ts.TypeNode,
+	getInner: () => TypeNode,
 	options: ResolvedZodToTsOptions,
 ) {
 	const auxiliaryTypeDefinition: InternalAuxiliaryTypeDefinition = {
@@ -76,8 +96,8 @@ function withAuxiliaryType(
 }
 
 interface InternalAuxiliaryTypeDefinition {
-	identifier: ts.Identifier
-	node?: ts.TypeAliasDeclaration
+	identifier: Identifier
+	node?: TypeAliasDeclaration
 	used?: boolean
 }
 
@@ -92,7 +112,7 @@ export function zodToTs(zod: z4.$ZodType, options: ZodToTsOptions) {
 function zodToTsNode(
 	schema: z4.$ZodType,
 	options: ResolvedZodToTsOptions,
-): ts.TypeNode {
+): TypeNode {
 	const def = (schema as z4.$ZodTypes)._zod.def
 
 	const typeOverride = callTypeOverride(schema, options)
@@ -107,42 +127,44 @@ function zodToTsNode(
 
 	switch (def.type) {
 		case 'string': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.StringKeyword)
 		}
 		case 'nan':
 		case 'number': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.NumberKeyword)
 		}
 		case 'bigint': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.BigIntKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.BigIntKeyword)
 		}
 		case 'success':
 		case 'boolean': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.BooleanKeyword)
 		}
 		case 'date': {
 			return createTypeReferenceFromString('Date')
 		}
 		case 'undefined': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword)
 		}
 		case 'null': {
-			return f.createLiteralTypeNode(f.createNull())
+			return f.createLiteralTypeNode(
+				f.createKeywordExpression(SyntaxKind.NullKeyword),
+			)
 		}
 		case 'void': {
 			return f.createUnionTypeNode([
-				f.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword),
-				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+				f.createKeywordTypeNode(SyntaxKind.VoidKeyword),
+				f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
 			])
 		}
 		case 'any': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.AnyKeyword)
 		}
 		case 'unknown': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.UnknownKeyword)
 		}
 		case 'never': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.NeverKeyword)
 		}
 		case 'lazy': {
 			return withAuxiliaryType(
@@ -170,7 +192,7 @@ function zodToTsNode(
 				() => {
 					const properties = Object.entries(def.shape)
 
-					const members: ts.TypeElement[] = properties.map(
+					const members: TypeElement[] = properties.map(
 						([key, memberZodSchema]) => {
 							const type = zodToTsNode(memberZodSchema, options)
 							const isOptional =
@@ -178,13 +200,14 @@ function zodToTsNode(
 									? memberZodSchema._zod.optin
 									: memberZodSchema._zod.optout
 
-							const propertySignature = f.createPropertySignature(
+							const propertySignature = f.createPropertySignatureDeclaration(
 								undefined,
 								getIdentifierOrStringLiteral(key),
 								isOptional
-									? f.createToken(ts.SyntaxKind.QuestionToken)
+									? f.createToken(SyntaxKind.QuestionToken)
 									: undefined,
 								type,
+								undefined!,
 							)
 
 							const description = getDescriptionFromSchema(
@@ -202,7 +225,7 @@ function zodToTsNode(
 					if (def.catchall) {
 						const catchallType = zodToTsNode(def.catchall, options)
 						members.push(
-							f.createIndexSignature(
+							f.createIndexSignatureDeclaration(
 								undefined,
 								[
 									f.createParameterDeclaration(
@@ -210,7 +233,7 @@ function zodToTsNode(
 										undefined,
 										f.createIdentifier('x'),
 										undefined,
-										f.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+										f.createKeywordTypeNode(SyntaxKind.StringKeyword),
 									),
 								],
 								catchallType,
@@ -240,7 +263,7 @@ function zodToTsNode(
 
 		case 'union': {
 			// z.union([z.string(), z.number()]) -> string | number
-			const types: ts.TypeNode[] = def.options.map((option) =>
+			const types: TypeNode[] = def.options.map((option) =>
 				zodToTsNode(option, options),
 			)
 			return f.createUnionTypeNode(types)
@@ -250,7 +273,7 @@ function zodToTsNode(
 			const innerType = zodToTsNode(def.innerType, options)
 			return f.createUnionTypeNode([
 				innerType,
-				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+				f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
 			])
 		}
 
@@ -258,7 +281,9 @@ function zodToTsNode(
 			const innerType = zodToTsNode(def.innerType, options)
 			return f.createUnionTypeNode([
 				innerType,
-				f.createLiteralTypeNode(f.createNull()),
+				f.createLiteralTypeNode(
+					f.createKeywordExpression(SyntaxKind.NullKeyword),
+				),
 			])
 		}
 
@@ -274,7 +299,7 @@ function zodToTsNode(
 			const valueType = zodToTsNode(def.valueType, options)
 
 			const node = f.createTypeLiteralNode([
-				f.createIndexSignature(
+				f.createIndexSignatureDeclaration(
 					undefined,
 					[
 						f.createParameterDeclaration(
@@ -380,26 +405,26 @@ function zodToTsNode(
 		}
 		case 'readonly': {
 			const innerType = zodToTsNode(def.innerType, options)
-			if (ts.isArrayTypeNode(innerType) || ts.isTupleTypeNode(innerType)) {
-				return f.createTypeOperatorNode(
-					ts.SyntaxKind.ReadonlyKeyword,
-					innerType,
-				)
+			if (isArrayTypeNode(innerType) || isTupleTypeNode(innerType)) {
+				return f.createTypeOperatorNode(SyntaxKind.ReadonlyKeyword, innerType)
 			}
 
-			if (ts.isTypeLiteralNode(innerType)) {
+			if (isTypeLiteralNode(innerType)) {
 				const members = innerType.members.map((member) => {
-					if (ts.isPropertySignature(member)) {
-						return f.updatePropertySignature(
+					if (isPropertySignatureDeclaration(member)) {
+						const readonlyMember = f.updatePropertySignatureDeclaration(
 							member,
 							[
 								...(member.modifiers ?? []),
-								f.createToken(ts.SyntaxKind.ReadonlyKeyword),
+								f.createToken(SyntaxKind.ReadonlyKeyword),
 							],
 							member.name,
-							member.questionToken,
+							member.postfixToken,
 							member.type,
+							member.initializer,
 						)
+						copyJsDocComment(member, readonlyMember)
+						return readonlyMember
 					}
 					return member
 				})
@@ -407,10 +432,7 @@ function zodToTsNode(
 				return f.createTypeLiteralNode(members)
 			}
 
-			if (
-				ts.isTypeReferenceNode(innerType) &&
-				ts.isIdentifier(innerType.typeName)
-			) {
+			if (isTypeReferenceNode(innerType) && isIdentifier(innerType.typeName)) {
 				const identifier = innerType.typeName.text
 				if (identifier === 'Set')
 					return f.createTypeReferenceNode(
@@ -434,13 +456,13 @@ function zodToTsNode(
 		}
 		case 'nonoptional': {
 			// z.string().optional().nonoptional() -> Exclude<string | undefined, undefined> -> string
-			return f.createTypeReferenceNode('Exclude', [
+			return f.createTypeReferenceNode(f.createIdentifier('Exclude'), [
 				zodToTsNode(def.innerType, options),
-				f.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+				f.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
 			])
 		}
 		case 'symbol': {
-			return f.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword)
+			return f.createKeywordTypeNode(SyntaxKind.SymbolKeyword)
 		}
 		case 'template_literal': {
 			const partNodes = def.parts.map((part) => {
@@ -450,13 +472,13 @@ function zodToTsNode(
 				return zodToTsNode(part, options)
 			})
 
-			let templateHead: ts.TemplateHead | undefined
+			let templateHead: TemplateHead | undefined
 
-			const templateSpans: ts.TemplateLiteralTypeSpan[] = []
-			let currentTypeSpanNode: ts.TypeNode | undefined
+			const templateSpans: TemplateLiteralTypeSpan[] = []
+			let currentTypeSpanNode: TypeNode | undefined
 			let currentMiddle = ''
 			for (const node of partNodes) {
-				if (ts.isLiteralTypeNode(node) && ts.isStringLiteral(node.literal)) {
+				if (isLiteralTypeNode(node) && isStringLiteral(node.literal)) {
 					currentMiddle += node.literal.text
 					continue
 				}
@@ -464,13 +486,17 @@ function zodToTsNode(
 				if (currentTypeSpanNode) {
 					const templateSpan = f.createTemplateLiteralTypeSpan(
 						currentTypeSpanNode,
-						f.createTemplateMiddle(currentMiddle),
+						f.createTemplateMiddle(currentMiddle, undefined!, TokenFlags.None),
 					)
 
 					templateSpans.push(templateSpan)
 				} else {
 					// if it's the first, set the head
-					templateHead = f.createTemplateHead(currentMiddle)
+					templateHead = f.createTemplateHead(
+						currentMiddle,
+						undefined!,
+						TokenFlags.None,
+					)
 					currentTypeSpanNode = node
 				}
 
@@ -481,16 +507,16 @@ function zodToTsNode(
 			if (templateHead && currentTypeSpanNode) {
 				const templateSpan = f.createTemplateLiteralTypeSpan(
 					currentTypeSpanNode,
-					f.createTemplateTail(currentMiddle),
+					f.createTemplateTail(currentMiddle, undefined!, TokenFlags.None),
 				)
 				templateSpans.push(templateSpan)
 			} else {
 				return f.createLiteralTypeNode(
-					f.createNoSubstitutionTemplateLiteral(currentMiddle),
+					f.createNoSubstitutionTemplateLiteral(currentMiddle, TokenFlags.None),
 				)
 			}
 
-			return f.createTemplateLiteralType(templateHead, templateSpans)
+			return f.createTemplateLiteralTypeNode(templateHead, templateSpans)
 		}
 	}
 
